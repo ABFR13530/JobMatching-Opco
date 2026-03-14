@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const RecruiterDashboard = () => {
   const [activeTab, setActiveTab] = useState('events'); // events | offers
@@ -56,26 +57,26 @@ const RecruiterDashboard = () => {
       
       {/* Header Corporate / Entreprise */}
       <header className="bg-slate-900 text-white relative overflow-hidden border-b border-slate-800">
-        <div className="absolute left-0 top-0 w-full h-[600px] bg-gradient-to-r from-accent-600/20 to-brand-900/10 blur-[80px] -z-0"></div>
-        <div className="max-w-7xl mx-auto px-6 py-10 relative z-10">
+        <div className="absolute left-0 top-0 w-full h-[600px] bg-gradient-to-r from-blue-600/20 to-slate-900/10 blur-[80px] -z-0"></div>
+        <div className="max-w-7xl mx-auto px-6 py-10 relative z-10 text-white">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div>
-              <span className="inline-block px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-xs font-bold tracking-widest uppercase mb-4 border border-slate-700">
-                Espace Recruteur
-              </span>
-              <h1 className="text-4xl lg:text-5xl font-display font-bold text-white tracking-tight leading-tight">
-                Trouvez vos futurs talents <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-400 to-yellow-200">du Numérique.</span>
-              </h1>
+            <div className="flex items-center gap-6">
+              <Link to="/" className="w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center font-display font-bold text-slate-900 text-2xl hover:scale-105 transition">ENT</Link>
+              <div>
+                <span className="inline-block px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-xs font-bold tracking-widest uppercase mb-4 border border-slate-700">
+                  Espace Entreprise
+                </span>
+                <h1 className="text-4xl lg:text-5xl font-display font-bold text-white tracking-tight leading-tight">
+                  Trouvez vos futurs talents
+                </h1>
+              </div>
             </div>
             <div className="flex items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700 backdrop-blur">
-              <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center font-display font-bold text-slate-900 text-lg">
-                ENT
-              </div>
-              <div className="text-left">
+              <div className="text-right">
                 <p className="font-semibold text-sm">Capgemini France</p>
-                <p className="text-xs text-slate-400">Agence Île-de-France</p>
+                <Link to="/" className="text-xs text-orange-400 font-bold hover:underline">Se déconnecter</Link>
               </div>
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">CF</div>
             </div>
           </div>
         </div>

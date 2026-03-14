@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const AdvisorDashboard = () => {
   const [activeTab, setActiveTab] = useState('events'); // events | candidats
@@ -72,23 +73,25 @@ const AdvisorDashboard = () => {
     <div className="min-h-screen bg-slate-50 font-sans">
       
       {/* Header Premium Numeric'Emploi */}
-      <header className="bg-brand-900 border-b border-brand-800 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-brand-600 rounded-full blur-[100px] opacity-30 -translate-y-1/2"></div>
+      <header className="bg-slate-900 border-b border-slate-800 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-blue-600 rounded-full blur-[100px] opacity-30 -translate-y-1/2"></div>
         <div className="max-w-7xl mx-auto px-6 py-8 relative z-10">
           <div className="flex justify-between items-end">
-             <div>
-                <span className="inline-block px-3 py-1 bg-brand-800 rounded-full text-brand-200 text-xs font-semibold tracking-wider uppercase mb-4 border border-brand-700">
-                  Espace Interne
-                </span>
-                <h1 className="text-3xl font-display font-bold text-white tracking-tight">Espace Conseiller Régional</h1>
-                <p className="text-brand-200 mt-2 font-light">Opco Atlas • Pilotage du Job Matching</p>
+             <div className="flex items-center gap-6">
+                <Link to="/" className="w-12 h-12 bg-white rounded-xl flex items-center justify-center font-display font-bold text-slate-900 text-2xl shadow-lg hover:scale-105 transition">N</Link>
+                <div>
+                  <span className="inline-block px-3 py-1 bg-slate-800 rounded-full text-blue-200 text-xs font-semibold tracking-wider uppercase mb-2 border border-slate-700">
+                    Espace Interne
+                  </span>
+                  <h1 className="text-3xl font-display font-bold text-white tracking-tight">Espace Conseiller Régional</h1>
+                </div>
              </div>
-             <div className="flex items-center gap-4">
+             <div className="flex items-center gap-6">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold">Conseiller Actif</p>
-                  <p className="text-xs text-brand-300">Île-de-France</p>
+                  <Link to="/" className="text-xs text-orange-400 font-bold hover:underline italic">Se déconnecter</Link>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold backdrop-blur">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold backdrop-blur ring-2 ring-white/10">
                   CR
                 </div>
              </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const CandidateDashboard = () => {
   const [activeTab, setActiveTab] = useState('matching'); // matching | profile
@@ -50,33 +51,32 @@ const CandidateDashboard = () => {
     <div className="min-h-screen bg-slate-50 font-sans pb-20">
       
       {/* Header Premium Candidat */}
-      <header className="bg-gradient-to-r from-brand-900 to-brand-800 text-white relative overflow-hidden shadow-xl border-b border-brand-700">
-        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-brand-500 rounded-full blur-[120px] opacity-20 -z-0"></div>
+      <header className="bg-slate-900 text-white relative overflow-hidden shadow-xl border-b border-slate-800">
+        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-600 rounded-full blur-[120px] opacity-20 -z-0"></div>
         <div className="max-w-7xl mx-auto px-6 py-10 relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div>
-              <span className="inline-block px-3 py-1 bg-brand-800 text-brand-200 rounded-full text-xs font-bold tracking-widest uppercase mb-4 shadow-inner ring-1 ring-brand-700">
-                Espace Candidat
-              </span>
-              <h1 className="text-4xl lg:text-5xl font-display font-bold tracking-tight leading-tight">
-                Votre carrière,<br/>
-                <span className="text-brand-300">accélérée par l'IA.</span>
-              </h1>
+            <div className="flex items-center gap-6">
+              <Link to="/" className="w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center font-display font-bold text-slate-900 text-2xl hover:scale-105 transition">C</Link>
+              <div>
+                <span className="inline-block px-3 py-1 bg-slate-800 text-blue-200 rounded-full text-xs font-bold tracking-widest uppercase mb-4 shadow-inner ring-1 ring-slate-700">
+                  Espace Candidat
+                </span>
+                <h1 className="text-4xl lg:text-5xl font-display font-bold tracking-tight leading-tight">
+                  Votre carrière,<br/>
+                  <span className="text-blue-300">accélérée par l'IA.</span>
+                </h1>
+              </div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-2xl flex items-center gap-5 shadow-2xl shadow-brand-900/50">
-               <div>
-                  <div className="text-brand-100 text-xs font-semibold uppercase tracking-wider mb-1 text-right">Employabilité</div>
-                  <div className="flex items-center gap-2">
-                     <span className="text-sm font-bold text-white bg-green-500/20 text-green-300 px-2 py-0.5 rounded border border-green-500/30">
-                        Niveau 1
-                     </span>
-                     <span className="text-brand-200 text-sm italic">"Prêt à l'emploi"</span>
-                  </div>
+            <div className="flex items-center gap-6">
+               <div className="text-right hidden sm:block">
+                  <p className="font-semibold text-sm">Candidat Actif</p>
+                  <Link to="/" className="text-xs text-orange-400 font-bold hover:underline italic">Se déconnecter</Link>
                </div>
-               <div className="w-14 h-14 bg-gradient-to-tr from-green-400 to-emerald-500 rounded-full flex items-center justify-center font-display font-bold text-white text-xl ring-4 ring-white/10 shadow-lg relative">
-                 <div className="absolute inset-0 border-2 border-white/30 rounded-full border-t-white animate-spin"></div>
-                 100
+               <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-2xl flex items-center gap-5 shadow-2xl">
+                  <div className="w-12 h-12 bg-gradient-to-tr from-green-400 to-emerald-500 rounded-full flex items-center justify-center font-display font-bold text-white text-lg ring-4 ring-white/10 shadow-lg relative">
+                    100
+                  </div>
                </div>
             </div>
             
