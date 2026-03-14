@@ -1,199 +1,229 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const AdvisorDashboard = () => {
-  const [activeTab, setActiveTab] = useState('candidats'); // 'candidats', 'entreprises', 'events', 'import'
+  const [activeTab, setActiveTab] = useState('events'); // events | candidats
+  
+  // États réels pour l'API
+  const [events, setEvents] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Formulaire Nouvel Événement
+  const [newEvent, setNewEvent] = useState({ title: '', description: '', event_date: '', location_type: 'visio', region: 'Île-de-France', recruiter_id: 1 });
+  const [isCreating, setIsCreating] = useState(false);
 
-  // --- Mock Data pour affichage UI ---
-  const pendingCandidates = [
-    { id: 1, nom: 'Dupont', prenom: 'Alice', email: 'alice@example.com', region: 'Île-de-France', competences: 'React, Node', statut: 'en attente' },
-    { id: 2, nom: 'Martin', prenom: 'Paul', email: 'paul@example.com', region: 'Nouvelle-Aquitaine', competences: 'Python, SQL', statut: 'en attente' },
-  ];
+  // MOCK LOGIN TEMPORAIRE (On simule un token/header pour l'API)
+  const headers = { 'Content-Type': 'application/json' };
 
-  const pendingCompanies = [
-    { 
-      id: 1, nom_entreprise: 'Tech Solutions', recruteur: 'Marc Blanc', email: 'marc@techsolutions.com', 
-      offre: 'Développeur Fullstack React/Node - CDI (Île-de-France)' 
+  // Charger les vraies données depuis l'API Node.js
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      if (activeTab === 'events') {
+        const res = await fetch('/api/events', { headers });
+        if(res.ok) {
+          const data = await res.json();
+          setEvents(data.events || []);
+        } else {
+          // Fallback d'affichage si la BDD est vide ou token invalide
+          setEvents([]); 
+        }
+      } else {
+        const res = await fetch('/api/candidates/qualified', { headers });
+        if(res.ok) {
+          const data = await res.json();
+          setCandidates(data.candidates || []);
+        }
+      }
+    } catch (e) {
+      console.error("Erreur connexion API", e);
     }
-  ];
-
-  const events = [
-    { id: 1, titre: 'Job Dating IDF - Tech & Data', date: '2026-04-10', region: 'Île-de-France', inscrits: 45, slots_reserves: 30, slots_total: 50, statut: 'publie' },
-    { id: 2, titre: 'Rencontre Alternance Cyber', date: '2026-05-15', region: 'Nouvelle-Aquitaine', inscrits: 12, slots_reserves: 0, slots_total: 20, statut: 'brouillon' }
-  ];
-
-  // --- Handlers UI (Front-end simulé) ---
-  const handleValidateCandidate = (id, niveau) => {
-    alert(`Candidat ${id} validé avec le niveau d'employabilité ${niveau}. Il accèdera au Job Matching.`);
-    // Requête réelle: PUT /api/candidates/:id { statut: 'actif', niveau_employabilite: niveau }
+    setIsLoading(false);
   };
 
-  const handleValidateCompany = (id) => {
-    alert(`Entreprise ${id} et son offre d'emploi validées.`);
-    // Requête réelle: PUT /api/companies/:id { statut: 'actif' } ...
-  };
-
-  const handleImport = (e) => {
+  const handleCreateEvent = async (e) => {
     e.preventDefault();
-    alert("Simulation de l'upload du fichier CSV/JSON au serveur...");
-    // Requête réelle avec form-data vers POST /api/candidates/import
+    setIsCreating(true);
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(newEvent)
+      });
+      if(res.ok) {
+        // Rafraîchir la liste et vider le form
+        await fetchData();
+        setNewEvent({ title: '', description: '', event_date: '', location_type: 'visio', region: 'Île-de-France', recruiter_id: 1 });
+      } else {
+        alert("Erreur lors de la création en base de données.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erreur réseau");
+    }
+    setIsCreating(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto block">
-        
-        {/* Header Dashboard */}
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard Conseiller Régional</h1>
-            <p className="text-sm text-gray-500 mt-1">Module Job Matching (Mode Standalone)</p>
+    <div className="min-h-screen bg-slate-50 font-sans">
+      
+      {/* Header Premium Numeric'Emploi */}
+      <header className="bg-brand-900 border-b border-brand-800 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-brand-600 rounded-full blur-[100px] opacity-30 -translate-y-1/2"></div>
+        <div className="max-w-7xl mx-auto px-6 py-8 relative z-10">
+          <div className="flex justify-between items-end">
+             <div>
+                <span className="inline-block px-3 py-1 bg-brand-800 rounded-full text-brand-200 text-xs font-semibold tracking-wider uppercase mb-4 border border-brand-700">
+                  Espace Interne
+                </span>
+                <h1 className="text-3xl font-display font-bold text-white tracking-tight">Espace Conseiller Régional</h1>
+                <p className="text-brand-200 mt-2 font-light">Opco Atlas • Pilotage du Job Matching</p>
+             </div>
+             <div className="flex items-center gap-4">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-semibold">Conseiller Actif</p>
+                  <p className="text-xs text-brand-300">Île-de-France</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold backdrop-blur">
+                  CR
+                </div>
+             </div>
           </div>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 shadow flex items-center gap-2">
-            <span>+</span> Nouvel Événement
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 flex gap-8">
+          <button 
+            onClick={() => setActiveTab('events')} 
+            className={`py-4 font-medium text-sm transition-all border-b-2 ${activeTab === 'events' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+             📅 Piloter les Job Dating
+          </button>
+          <button 
+            onClick={() => setActiveTab('candidats')} 
+            className={`py-4 font-medium text-sm transition-all border-b-2 ${activeTab === 'candidats' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+             👤 Vivier Candidats (Niv 1 & 2)
           </button>
         </div>
-
-        {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            {['candidats', 'entreprises', 'events', 'import'].map(tab => (
-              <button key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`${
-                  activeTab === tab ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize`}
-              >
-                {tab === 'events' ? 'Événements Job Matching' : tab === 'import' ? 'Interopérabilité (Import)' : `${tab} En attente`}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* --- TAB : CANDIDATS EN ATTENTE --- */}
-        {activeTab === 'candidats' && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Candidats à qualifier (Apportés via Inscription Publique)</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Candidat</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Région</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Compétences</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Décision</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {pendingCandidates.map(c => (
-                    <tr key={c.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-semibold text-gray-900">{c.prenom} {c.nom}</div>
-                        <div className="text-sm text-gray-500">{c.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.region}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500"><span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">{c.competences}</span></td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <button onClick={() => handleValidateCandidate(c.id, 1)} className="text-green-600 hover:text-green-900 font-medium mr-3">Valider (Niv 1)</button>
-                        <button onClick={() => handleValidateCandidate(c.id, 2)} className="text-blue-600 hover:text-blue-900 font-medium mr-3">Valider (Niv 2)</button>
-                        <button className="text-red-600 hover:text-red-900 font-medium">Refuser</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* --- TAB : ENTREPRISES EN ATTENTE --- */}
-        {activeTab === 'entreprises' && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Recruteurs et Offres à valider</h2>
-            <div className="space-y-4">
-              {pendingCompanies.map(comp => (
-                <div key={comp.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center bg-gray-50 hover:bg-white transition">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800">{comp.nom_entreprise} <span className="text-sm font-normal text-gray-500">({comp.recruteur} - {comp.email})</span></h3>
-                    <p className="text-sm text-indigo-600 font-medium mt-1">Offre déposée : {comp.offre}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleValidateCompany(comp.id)} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 shadow-sm text-sm font-medium">Accepter & Ouvrir l'accès</button>
-                    <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50 shadow-sm text-sm font-medium">Mettre en attente</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* --- TAB : EVENTS --- */}
-        {activeTab === 'events' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-medium text-gray-900">Mes Événements Régionaux</h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              {events.map(ev => (
-                <div key={ev.id} className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                  <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">{ev.titre}</h3>
-                      <p className="text-sm text-gray-500">{ev.date} - {ev.region}</p>
-                    </div>
-                    {ev.statut === 'publie' ? 
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Publié</span> :
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Brouillon</span>
-                    }
-                  </div>
-                  <div className="px-4 py-5 sm:p-6 bg-gray-50">
-                    <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
-                      <div><dt className="text-sm font-medium text-gray-500">Candidats Ins.</dt><dd className="mt-1 text-2xl font-semibold text-gray-900">{ev.inscrits}</dd></div>
-                      <div><dt className="text-sm font-medium text-gray-500">RDV Réservés</dt><dd className="mt-1 text-2xl font-semibold text-blue-600">{ev.slots_reserves}/{ev.slots_total}</dd></div>
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">Remplissage</dt>
-                        <dd className="mt-1 text-2xl font-semibold text-green-600">{Math.round((ev.slots_reserves/ev.slots_total || 0)*100)}%</dd>
-                      </div>
-                    </dl>
-                  </div>
-                  <div className="px-4 py-4 sm:px-6">
-                    <button className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Gérer les invitations & listes ➔</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* --- TAB : IMPORT DATA --- */}
-        {activeTab === 'import' && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-2">Importation de masse (Interopérabilité CSV/JSON)</h2>
-            <p className="text-sm text-gray-500 mb-6">Uploadez une base de candidats issue d'un système tiers. Le système validera les profils automatiquement.</p>
-            
-            <form onSubmit={handleImport} className="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center hover:bg-gray-50 transition">
-              <div className="text-gray-400 mb-2">
-                 <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
-              <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                <span>Sélectionner un fichier</span>
-                <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".csv,.json" />
-              </label>
-              <p className="text-xs text-gray-500 mt-2">CSV ou JSON jusqu'à 5 Mo.</p>
-              
-              <button type="submit" className="mt-6 w-full sm:w-auto inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                Lancer l'importation
-              </button>
-            </form>
-
-            <div className="mt-8 border-t pt-6">
-              <h3 className="text-md font-medium text-gray-900 mb-3">Logs d'intégration récents</h3>
-              <div className="bg-gray-100 rounded p-4 text-sm font-mono text-gray-700">
-                <p>🟢 [2026-03-12] import_candidats_v2.csv : 142 profils intégrés, 0 erreur.</p>
-                <p>🔴 [2026-03-14] api_pôle_emploi.json : 8 profils intégrés, <span className="text-red-600 font-bold">2 erreurs (email invalide)</span>.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
       </div>
+
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        
+        {/* TAB EVENTS */}
+        {activeTab === 'events' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up">
+            
+            {/* Formulaire API de création */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-accent-50 rounded-full blur-[40px] -z-10 -translate-y-1/2 translate-x-1/2"></div>
+                <h2 className="text-xl font-display font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <span className="text-accent-500">✨</span> Créer un Job Dating
+                </h2>
+                
+                <form onSubmit={handleCreateEvent} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Titre de l'événement</label>
+                    <input type="text" required value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} 
+                           className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition" 
+                           placeholder="Ex: Soirée Recrutement Développeurs" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Description</label>
+                    <textarea required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} rows="3"
+                           className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition" 
+                           placeholder="Objectifs, thématique..."></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Date (Y-M-D H:i)</label>
+                    <input type="datetime-local" required value={newEvent.event_date} onChange={e => setNewEvent({...newEvent, event_date: e.target.value})}
+                           className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition" />
+                  </div>
+                  <button type="submit" disabled={isCreating} className="w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-xl font-semibold shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:-translate-y-0.5 transition-all text-sm flex justify-center items-center gap-2">
+                    {isCreating ? 'Enregistrement BD...' : 'Publier l\'événement'}
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Liste API des événements */}
+            <div className="lg:col-span-2">
+              <div className="flex justify-between items-end mb-6">
+                 <h2 className="text-2xl font-display font-bold text-slate-900">Vos Événements Actifs</h2>
+                 <span className="text-sm font-medium text-slate-500 bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
+                    {events.length} au total
+                 </span>
+              </div>
+              
+              {isLoading ? (
+                 <div className="h-64 flex items-center justify-center bg-white rounded-2xl border border-slate-100 p-8 shadow-sm">
+                   <div className="text-brand-500 flex flex-col items-center">
+                     <span className="animate-spin text-4xl mb-4">⚙️</span>
+                     <p className="font-medium text-sm">Synchronisation API en cours...</p>
+                   </div>
+                 </div>
+              ) : events.length === 0 ? (
+                 <div className="bg-white rounded-2xl border border-slate-200 border-dashed p-12 text-center">
+                    <div className="text-5xl mb-4">📭</div>
+                    <h3 className="text-lg font-bold text-slate-700">Aucun événement trouvé</h3>
+                    <p className="text-slate-500 text-sm mt-2">La base de données ne contient aucun Job Dating actif pour le moment. Utilisez le formulaire de gauche pour insérer votre première donnée réelle !</p>
+                 </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {events.map((evt) => (
+                    <div key={evt.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition group relative overflow-hidden">
+                       <div className="absolute top-0 right-0 w-1 h-full bg-brand-500 transform origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform duration-300"></div>
+                       <div className="flex justify-between items-start mb-4">
+                         <div className="p-2 bg-brand-50 text-brand-600 rounded-lg text-xl">
+                            {evt.location_type === 'visio' ? '💻' : '🏢'}
+                         </div>
+                         <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-md">Publié</span>
+                       </div>
+                       <h3 className="font-bold text-slate-900 mb-1">{evt.title}</h3>
+                       <p className="text-xs text-slate-500 line-clamp-2 mb-4 h-8">{evt.description}</p>
+                       <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs font-medium text-slate-600">
+                         <span>📍 {evt.region}</span>
+                         <span>📅 {new Date(evt.event_date).toLocaleDateString()}</span>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+          </div>
+        )}
+
+        {/* TAB CANDIDATS (Interopérabilité) */}
+        {activeTab === 'candidats' && (
+           <div className="animate-fade-in-up">
+              <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+                 <div className="p-8 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
+                    <div>
+                      <h2 className="text-2xl font-display font-bold text-slate-900">Vivier d'Employabilité (Niv 1 & 2)</h2>
+                      <p className="text-sm text-slate-500 mt-1">Candidats prêts au matching, synchronisés avec la base.</p>
+                    </div>
+                    <button className="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-900/20">
+                       📥 Importer CSV
+                    </button>
+                 </div>
+                 
+                 <div className="p-12 text-center bg-slate-50 text-slate-600">
+                    <p className="font-medium text-lg">💡 Module d'interopérabilité actif.</p>
+                    <p className="text-sm mt-2 max-w-lg mx-auto">
+                       En mode Standalone, importez vos candidats existants via le bouton CSV en haut à droite. En mode Connecté (production), ce tableau se remplira automatiquement via les Webhooks en provenance de la plateforme Mentorat de Numeric'Emploi.
+                    </p>
+                 </div>
+              </div>
+           </div>
+        )}
+
+      </main>
     </div>
   );
 };

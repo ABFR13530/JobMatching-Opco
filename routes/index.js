@@ -18,6 +18,7 @@ module.exports = (db) => {
   const eventCtrl = require('../controllers/event.controller')(db);
   const candidateCtrl = require('../controllers/candidate.controller')(db);
   const authCtrl = require('../controllers/auth.controller')(db);
+  const offerCtrl = require('../controllers/job_offer.controller')(db);
   const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 
   // ==========================================
@@ -55,6 +56,12 @@ module.exports = (db) => {
   
   // Endpoint critique de réservation transactionnelle
   router.post('/events/book', eventCtrl.bookSlot);
+
+  // ==========================================
+  // ROUTES DES OFFRES D'EMPLOI (DÉPÔT ENTREPRISE)
+  // ==========================================
+  router.get('/offers', offerCtrl.listOffers);
+  router.post('/offers', offerCtrl.createOffer);
 
   return router;
 };
