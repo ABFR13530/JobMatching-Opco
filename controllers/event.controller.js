@@ -42,7 +42,7 @@ module.exports = (db) => {
 
       try {
         const { rows } = await db.query(query, params);
-        res.status(200).json(rows);
+        res.status(200).json({ success: true, events: rows });
       } catch (err) {
         res.status(500).json({ error: err.message });
       }

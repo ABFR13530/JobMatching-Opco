@@ -43,11 +43,15 @@ const RecruiterDashboard = () => {
         body: JSON.stringify(newOffer)
       });
       if(res.ok) {
+        alert("✅ Offre publiée avec succès ! Elle est maintenant visible par les candidats qualifiés.");
         setNewOffer({ title: '', description: '', contract_type: 'CDI', location: 'Paris', salary_range: '', is_remote: false });
         fetchData();
+      } else {
+        const err = await res.json();
+        alert("❌ Erreur lors de la publication : " + (err.error || "Problème serveur"));
       }
     } catch (e) {
-      alert("Erreur réseau");
+      alert("⚠️ Erreur réseau : impossible de joindre le serveur.");
     }
     setIsSubmitting(false);
   };

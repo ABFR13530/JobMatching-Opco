@@ -1,231 +1,231 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const AdvisorDashboard = () => {
-  const [activeTab, setActiveTab] = useState('events'); // events | candidats
-  
-  // États réels pour l'API
+  const navigate = useNavigate();
+  const [showPicker, setShowPicker] = useState(!localStorage.getItem('user_role'));
+  const [activeTab, setActiveTab] = useState('events'); // events | candidates
+
+  // États pour les données
   const [events, setEvents] = useState([]);
   const [candidates, setCandidates] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
+  const [isLoading, setIsLoading] = useState(false);
+
   // Formulaire Nouvel Événement
-  const [newEvent, setNewEvent] = useState({ title: '', description: '', event_date: '', location_type: 'visio', region: 'Île-de-France', recruiter_id: 1 });
-  const [isCreating, setIsCreating] = useState(false);
+  const [newEvent, setNewEvent] = useState({ titre: '', date: '', region: 'Île-de-France', max_participants: 50 });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // MOCK LOGIN TEMPORAIRE (On simule un token/header pour l'API)
-  const headers = { 'Content-Type': 'application/json' };
-
-  // Charger les vraies données depuis l'API Node.js
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
+  const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      if (activeTab === 'events') {
-        const res = await fetch('/api/events', { headers });
-        if(res.ok) {
-          const data = await res.json();
-          setEvents(data.events || []);
-        } else {
-          // Fallback d'affichage si la BDD est vide ou token invalide
-          setEvents([]); 
-        }
-      } else {
-        const res = await fetch('/api/candidates/qualified', { headers });
-        if(res.ok) {
-          const data = await res.json();
-          setCandidates(data.candidates || []);
-        }
+      const res = await fetch('/api/events');
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data.events || []);
       }
-    } catch (e) {
-      console.error("Erreur connexion API", e);
-    }
+    } catch (e) { console.error(e); }
     setIsLoading(false);
   };
 
+  const fetchCandidates = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/candidates/qualified');
+      if (res.ok) {
+        const data = await res.json();
+        setCandidates(data.candidates || []);
+      }
+    } catch (e) { console.error(e); }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (!showPicker) {
+      if (activeTab === 'events') fetchEvents();
+      if (activeTab === 'candidates') fetchCandidates();
+    }
+  }, [showPicker, activeTab]);
+
   const handleCreateEvent = async (e) => {
     e.preventDefault();
-    setIsCreating(true);
+    setIsSubmitting(true);
     try {
       const res = await fetch('/api/events', {
         method: 'POST',
-        headers,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify(newEvent)
       });
-      if(res.ok) {
-        // Rafraîchir la liste et vider le form
-        await fetchData();
-        setNewEvent({ title: '', description: '', event_date: '', location_type: 'visio', region: 'Île-de-France', recruiter_id: 1 });
+      if (res.ok) {
+        setNewEvent({ titre: '', date: '', region: 'Île-de-France', max_participants: 50 });
+        fetchEvents();
+        setActiveTab('events');
       } else {
-        alert("Erreur lors de la création en base de données.");
+        const err = await res.json();
+        alert("Erreur Base de Données : " + (err.error || "Impossible de créer l'événement"));
       }
     } catch (e) {
-      console.error(e);
-      alert("Erreur réseau");
+      alert("Erreur Réseau");
     }
-    setIsCreating(false);
+    setIsSubmitting(false);
   };
+
+  const handleQuickLogin = (acc) => {
+    localStorage.setItem('token', 'DEMO_JWT_2026');
+    localStorage.setItem('user_role', acc.role);
+    localStorage.setItem('user_name', acc.name);
+    localStorage.setItem('user_region', acc.region);
+    setShowPicker(false);
+  };
+
+  if (showPicker) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 font-sans">
+        <div className="max-w-2xl w-full">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-display font-black text-white mb-2 uppercase tracking-tighter italic">Numeric'Emploi <span className="text-blue-500">Fast-Login</span></h2>
+            <p className="text-slate-400 text-sm font-medium">Choisissez un profil conseiller pour la démonstration</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button onClick={() => handleQuickLogin({role:'advisor', name:'Marc Durand', region:'Île-de-France'})} className="group bg-slate-900/50 border border-white/10 p-8 rounded-[2rem] text-left hover:border-blue-500/50 transition-all">
+                <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:rotate-6 transition-transform">👩‍💼</div>
+                <h3 className="text-white font-bold text-lg">Marc Durand</h3>
+                <p className="text-blue-400 text-xs font-bold uppercase tracking-widest">Conseiller IDF</p>
+            </button>
+            <button onClick={() => navigate('/dashboard/superadmin')} className="group bg-slate-900/50 border border-white/10 p-8 rounded-[2rem] text-left hover:border-purple-500/50 transition-all">
+                <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:rotate-6 transition-transform">👑</div>
+                <h3 className="text-white font-bold text-lg">Albane Bossan</h3>
+                <p className="text-purple-400 text-xs font-bold uppercase tracking-widest">Super Admin</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-      
-      {/* Header Premium Numeric'Emploi */}
       <header className="bg-slate-900 border-b border-slate-800 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-blue-600 rounded-full blur-[100px] opacity-30 -translate-y-1/2"></div>
-        <div className="max-w-7xl mx-auto px-6 py-8 relative z-10">
-          <div className="flex justify-between items-end">
-             <div className="flex items-center gap-6">
-                <Link to="/" className="w-12 h-12 bg-white rounded-xl flex items-center justify-center font-display font-bold text-slate-900 text-2xl shadow-lg hover:scale-105 transition">N</Link>
-                <div>
-                  <span className="inline-block px-3 py-1 bg-slate-800 rounded-full text-blue-200 text-xs font-semibold tracking-wider uppercase mb-2 border border-slate-700">
-                    Espace Interne
-                  </span>
-                  <h1 className="text-3xl font-display font-bold text-white tracking-tight">Espace Conseiller Régional</h1>
-                </div>
-             </div>
-             <div className="flex items-center gap-6">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold">Conseiller Actif</p>
-                  <Link to="/" className="text-xs text-orange-400 font-bold hover:underline italic">Se déconnecter</Link>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold backdrop-blur ring-2 ring-white/10">
-                  CR
-                </div>
-             </div>
+        <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-blue-600 rounded-full blur-[100px] opacity-20 -translate-y-1/2"></div>
+        <div className="max-w-7xl mx-auto px-6 py-6 relative z-10 flex justify-between items-center text-white">
+          <div className="flex items-center gap-6">
+            <Link to="/" className="w-12 h-12 bg-white rounded-xl flex items-center justify-center font-display font-bold text-slate-900 text-2xl shadow-lg hover:scale-105 transition">N</Link>
+            <div>
+              <span className="inline-block px-2 py-0.5 bg-slate-800 rounded text-blue-300 text-[10px] font-bold tracking-widest uppercase mb-1 border border-slate-700">Conseiller Régional</span>
+              <h1 className="text-2xl font-display font-bold text-white tracking-tight leading-none">Espace {localStorage.getItem('user_name')}</h1>
+            </div>
           </div>
+          <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-bold transition-all">Déconnexion</button>
         </div>
       </header>
 
-      {/* Tabs */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 flex gap-8">
-          <button 
-            onClick={() => setActiveTab('events')} 
-            className={`py-4 font-medium text-sm transition-all border-b-2 ${activeTab === 'events' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
-             📅 Piloter les Job Dating
-          </button>
-          <button 
-            onClick={() => setActiveTab('candidats')} 
-            className={`py-4 font-medium text-sm transition-all border-b-2 ${activeTab === 'candidats' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
-             👤 Vivier Candidats (Niv 1 & 2)
-          </button>
+          <button onClick={() => setActiveTab('events')} className={`py-4 font-bold text-sm transition-all border-b-2 ${activeTab === 'events' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>🗓️ Gestion Événements</button>
+          <button onClick={() => setActiveTab('candidates')} className={`py-4 font-bold text-sm transition-all border-b-2 ${activeTab === 'candidates' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>👨‍🎓 Pool Candidats</button>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        
-        {/* TAB EVENTS */}
+      <main className="max-w-7xl mx-auto px-6 py-10 animate-fade-in-up">
         {activeTab === 'events' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up">
-            
-            {/* Formulaire API de création */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* Formulaire Création */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-accent-50 rounded-full blur-[40px] -z-10 -translate-y-1/2 translate-x-1/2"></div>
-                <h2 className="text-xl font-display font-bold text-slate-900 mb-6 flex items-center gap-2">
-                  <span className="text-accent-500">✨</span> Créer un Job Dating
-                </h2>
-                
-                <form onSubmit={handleCreateEvent} className="space-y-5">
+              <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 sticky top-24">
+                <h2 className="text-xl font-display font-bold text-slate-900 mb-6 flex items-center gap-3">➕ Créer un Job Dating</h2>
+                <form onSubmit={handleCreateEvent} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Titre de l'événement</label>
-                    <input type="text" required value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} 
-                           className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition" 
-                           placeholder="Ex: Soirée Recrutement Développeurs" />
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Titre de l'événement</label>
+                    <input type="text" required value={newEvent.titre} onChange={e => setNewEvent({...newEvent, titre: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500" placeholder="Ex: Job Dating Dev Web IDF" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Description</label>
-                    <textarea required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} rows="3"
-                           className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition" 
-                           placeholder="Objectifs, thématique..."></textarea>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Date</label>
+                    <input type="date" required value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Date (Y-M-D H:i)</label>
-                    <input type="datetime-local" required value={newEvent.event_date} onChange={e => setNewEvent({...newEvent, event_date: e.target.value})}
-                           className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition" />
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Région</label>
+                    <select value={newEvent.region} onChange={e => setNewEvent({...newEvent, region: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                      <option>Île-de-France</option><option>Nouvelle-Aquitaine</option><option>Auvergne-Rhône-Alpes</option><option>Bretagne</option>
+                    </select>
                   </div>
-                  <button type="submit" disabled={isCreating} className="w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-xl font-semibold shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:-translate-y-0.5 transition-all text-sm flex justify-center items-center gap-2">
-                    {isCreating ? 'Enregistrement BD...' : 'Publier l\'événement'}
-                  </button>
+                  <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-brand-600 text-white rounded-xl font-bold shadow-lg shadow-brand-500/20 hover:scale-105 transition-all active:scale-95 text-sm uppercase tracking-widest">{isSubmitting ? 'Création...' : 'Publier au Pool'}</button>
                 </form>
               </div>
             </div>
 
-            {/* Liste API des événements */}
+            {/* Liste Événements */}
             <div className="lg:col-span-2">
-              <div className="flex justify-between items-end mb-6">
-                 <h2 className="text-2xl font-display font-bold text-slate-900">Vos Événements Actifs</h2>
-                 <span className="text-sm font-medium text-slate-500 bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
-                    {events.length} au total
-                 </span>
-              </div>
-              
+              <h2 className="text-2xl font-display font-bold text-slate-900 mb-6 flex justify-between items-center">Sessions Actives <span>{events.length}</span></h2>
               {isLoading ? (
-                 <div className="h-64 flex items-center justify-center bg-white rounded-2xl border border-slate-100 p-8 shadow-sm">
-                   <div className="text-brand-500 flex flex-col items-center">
-                     <span className="animate-spin text-4xl mb-4">⚙️</span>
-                     <p className="font-medium text-sm">Synchronisation API en cours...</p>
-                   </div>
-                 </div>
+                <div className="py-20 text-center animate-pulse text-brand-500">Chargement...</div>
               ) : events.length === 0 ? (
-                 <div className="bg-white rounded-2xl border border-slate-200 border-dashed p-12 text-center">
-                    <div className="text-5xl mb-4">📭</div>
-                    <h3 className="text-lg font-bold text-slate-700">Aucun événement trouvé</h3>
-                    <p className="text-slate-500 text-sm mt-2">La base de données ne contient aucun Job Dating actif pour le moment. Utilisez le formulaire de gauche pour insérer votre première donnée réelle !</p>
-                 </div>
+                <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-slate-200">Aucun événement créé pour le moment.</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {events.map((evt) => (
-                    <div key={evt.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition group relative overflow-hidden">
-                       <div className="absolute top-0 right-0 w-1 h-full bg-brand-500 transform origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform duration-300"></div>
-                       <div className="flex justify-between items-start mb-4">
-                         <div className="p-2 bg-brand-50 text-brand-600 rounded-lg text-xl">
-                            {evt.location_type === 'visio' ? '💻' : '🏢'}
+                <div className="space-y-4">
+                  {events.map(evt => (
+                    <div key={evt.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition flex items-center justify-between">
+                       <div>
+                         <h3 className="font-bold text-slate-900 text-lg">{evt.titre}</h3>
+                         <div className="flex gap-4 text-xs font-medium text-slate-500 mt-1">
+                           <span>📅 {new Date(evt.date).toLocaleDateString()}</span>
+                           <span>📍 {evt.region}</span>
+                           <span className="text-orange-500 font-bold uppercase">{evt.statut}</span>
                          </div>
-                         <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-md">Publié</span>
                        </div>
-                       <h3 className="font-bold text-slate-900 mb-1">{evt.title}</h3>
-                       <p className="text-xs text-slate-500 line-clamp-2 mb-4 h-8">{evt.description}</p>
-                       <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs font-medium text-slate-600">
-                         <span>📍 {evt.region}</span>
-                         <span>📅 {new Date(evt.event_date).toLocaleDateString()}</span>
+                       <div className="flex gap-2">
+                          <button className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition">Modifier</button>
+                          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/20">Inviter Candidats</button>
                        </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            
           </div>
         )}
 
-        {/* TAB CANDIDATS (Interopérabilité) */}
-        {activeTab === 'candidats' && (
-           <div className="animate-fade-in-up">
-              <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                 <div className="p-8 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
-                    <div>
-                      <h2 className="text-2xl font-display font-bold text-slate-900">Vivier d'Employabilité (Niv 1 & 2)</h2>
-                      <p className="text-sm text-slate-500 mt-1">Candidats prêts au matching, synchronisés avec la base.</p>
-                    </div>
-                    <button className="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-900/20">
-                       📥 Importer CSV
-                    </button>
-                 </div>
-                 
-                 <div className="p-12 text-center bg-slate-50 text-slate-600">
-                    <p className="font-medium text-lg">💡 Module d'interopérabilité actif.</p>
-                    <p className="text-sm mt-2 max-w-lg mx-auto">
-                       En mode Standalone, importez vos candidats existants via le bouton CSV en haut à droite. En mode Connecté (production), ce tableau se remplira automatiquement via les Webhooks en provenance de la plateforme Mentorat de Numeric'Emploi.
-                    </p>
-                 </div>
-              </div>
-           </div>
+        {activeTab === 'candidates' && (
+          <div className="animate-fade-in-up">
+             <div className="flex justify-between items-end mb-8">
+               <div>
+                 <h2 className="text-3xl font-display font-bold text-slate-900">Pool Candidats</h2>
+                 <p className="text-slate-500 mt-1">Profils qualifiés (Niveau 1 & 2) disponibles pour le matching.</p>
+               </div>
+               <button className="px-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition">⬇️ Exporter CSV</button>
+             </div>
+             <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                <table className="w-full text-left">
+                   <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                      <tr>
+                        <th className="px-8 py-5">Candidat</th>
+                        <th className="px-8 py-5">Région</th>
+                        <th className="px-8 py-5">Niveau</th>
+                        <th className="px-8 py-5">Actions</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-100">
+                      {candidates.map(cand => (
+                        <tr key={cand.id} className="hover:bg-slate-50 transition">
+                           <td className="px-8 py-5">
+                              <p className="font-bold text-slate-900">{cand.prenom} {cand.nom}</p>
+                              <p className="text-xs text-slate-500 lowercase">{cand.email}</p>
+                           </td>
+                           <td className="px-8 py-5 text-sm font-medium text-slate-600">{cand.region}</td>
+                           <td className="px-8 py-5">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${cand.niveau_employabilite === 1 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>Niveau {cand.niveau_employabilite}</span>
+                           </td>
+                           <td className="px-8 py-5">
+                              <button className="text-xs font-bold text-brand-600 hover:underline">Voir Profil</button>
+                           </td>
+                        </tr>
+                      ))}
+                   </tbody>
+                </table>
+             </div>
+          </div>
         )}
-
       </main>
     </div>
   );
