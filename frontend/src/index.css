@@ -2,8 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Animations subtiles pour l'expérience globale (Mentor First) */
+:root {
+  --numeric-blue: #4CA6C9;   /* Bleu Numeum / Numeric'Emploi */
+  --numeric-orange: #f58220; /* Orange Numeric'Emploi */
+  --numeric-dark: #0f172a;   /* Navy Dark Blue */
+}
+
 @layer utilities {
+  .bg-numeric-blue { background-color: var(--numeric-blue); }
+  .text-numeric-blue { color: var(--numeric-blue); }
+  .bg-numeric-orange { background-color: var(--numeric-orange); }
+  .text-numeric-orange { color: var(--numeric-orange); }
+  
   .animate-fadeIn {
     animation: fadeIn 0.4s ease-in-out;
   }
@@ -21,3 +31,4 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+

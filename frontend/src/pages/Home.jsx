@@ -28,12 +28,12 @@ const Home = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center pointer-events-auto">
           <div className="flex items-center gap-4">
              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-slate-900 shadow-2xl">N</div>
-             <span className="font-display font-black text-xl italic tracking-tighter">Numeric'Emploi <span className="text-blue-500">SaaS</span></span>
+             <span className="font-display font-black text-xl italic tracking-tighter">Numeric'emploi/<span className="text-numeric-orange">Job matching</span></span>
           </div>
           <div className="hidden md:flex gap-8 items-center bg-white/5 backdrop-blur-md px-8 py-3 rounded-full border border-white/10 shadow-xl">
              <a href="#events" className="text-xs font-bold uppercase tracking-widest hover:text-blue-400 transition">Événements</a>
              <a href="#solutions" className="text-xs font-bold uppercase tracking-widest hover:text-blue-400 transition">Solutions</a>
-             <button onClick={() => navigate('/connexion/interne')} className="bg-blue-600 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition shadow-lg shadow-blue-500/20">Accès Interne</button>
+             <button onClick={() => navigate('/connexion/interne')} className="bg-numeric-orange px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition shadow-lg shadow-orange-500/20">Accès Interne</button>
           </div>
         </div>
       </nav>
@@ -47,16 +47,16 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full mb-8 animate-fade-in">
              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Plateforme Souveraine pour l'OPCO ATLAS</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-numeric-blue">L'outil de job matching dédié aux métiers du Numérique</span>
           </div>
           
           <h1 className="text-6xl md:text-8xl lg:text-9xl font-display font-black tracking-tighter leading-[0.85] italic mb-10 max-w-5xl mx-auto animate-fade-in-up">
-            Connectez vos <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Jeunes Talents.</span>
+            Connecter les <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-numeric-blue to-numeric-orange">entreprises et les talents</span>
           </h1>
           
           <p className="text-slate-400 max-w-2xl mx-auto text-lg md:text-xl font-medium leading-relaxed mb-16 animate-fade-in-up delay-100">
-            La solution hybride de Job Matching pour organiser vos forums entreprises, gérer vos CVthèques et piloter le mentorat en toute conformité RGPD.
+            Notre solution de Job matching dédiée aux besoins des entreprises et des candidats
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-6 animate-fade-in-up delay-200">
@@ -74,7 +74,7 @@ const Home = () => {
       <section id="events" className="max-w-7xl mx-auto px-6 py-32 border-t border-white/5">
          <div className="flex justify-between items-end mb-16 px-4">
             <div className="max-w-xl">
-               <h2 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-4 italic">Calendrier National</h2>
+               <h2 className="text-[10px] font-black text-numeric-orange uppercase tracking-widest mb-4 italic">Calendrier National</h2>
                <h3 className="text-4xl md:text-5xl font-display font-black tracking-tighter italic">Événements en direct</h3>
             </div>
             <p className="text-slate-500 text-sm font-bold italic hidden md:block">Accédez aux sessions de recrutement régionales en un clic.</p>
@@ -119,7 +119,7 @@ const Home = () => {
          </div>
          <div className="w-32 h-10 grayscale opacity-20 filter invert brightness-200 contrast-150">
             {/* Logo Opco Atlas (Placeholder text) */}
-            <span className="font-black italic text-xl">OPCO ATLAS</span>
+            <span className="font-black italic text-xl opacity-0">NUMERIC EMPLOI</span>
          </div>
       </footer>
 
