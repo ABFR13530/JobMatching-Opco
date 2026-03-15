@@ -12,13 +12,35 @@ module.exports = (db) => {
      * @desc Créer un nouvel événement (Conseiller/Admin)
      */
     async createEvent(req, res) {
-      const { titre, date, region, max_participants, event_format, interview_duration, description } = req.body;
+      const { 
+        titre, date, date_fin, region, max_participants, 
+        event_format, interview_duration, description,
+        heure_debut, heure_fin, pause_debut, pause_fin,
+        counselor_region 
+      } = req.body;
+
+      // Logique de restriction régionale
+      if (event_format !== 'virtuel' && counselor_region && region !== counselor_region) {
+        return res.status(403).json({ error: `Action interdite : Vous ne pouvez créer des événements présentiels/hybrides que pour votre région (${counselor_region}).` });
+      }
+
       try {
         const query = `
-          INSERT INTO job_matching_events (titre, date, region, max_participants, event_format, interview_duration, description, statut)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'brouillon') RETURNING *
+          INSERT INTO job_matching_events (
+            titre, date, date_fin, region, max_participants, 
+            event_format, interview_duration, description, 
+            heure_debut, heure_fin, pause_debut, pause_fin,
+            statut, created_by_region
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'brouillon', $13) RETURNING *
         `;
-        const { rows } = await db.query(query, [titre, date, region, max_participants, event_format || 'virtuel', interview_duration || 20, description]);
+        const { rows } = await db.query(query, [
+          titre, date, date_fin || date, region, max_participants, 
+          event_format || 'virtuel', interview_duration || 20, description,
+          heure_debut || '09:00', heure_fin || '18:00', 
+          pause_debut || '12:30', pause_fin || '13:30',
+          counselor_region
+        ]);
         res.status(201).json({ success: true, event: rows[0] });
       } catch (err) {
         res.status(500).json({ error: err.message });
@@ -27,17 +49,22 @@ module.exports = (db) => {
 
     /**
      * @route GET /api/events
-     * @desc Liste les événements. En mode Candidat, filtre par région et statut "publié"
+     * @desc Liste les événements. Filtre par région pour Candidats et Recruteurs.
      */
     async listEvents(req, res) {
-      const { region, role } = req.user || req.query; // Contexte auth à ajuster
+      const { region, role } = req.query; 
       
       let query = "SELECT * FROM job_matching_events";
       const params = [];
 
-      if (role === 'candidat' && region) {
-        query += " WHERE region = $1 AND statut = 'publie'";
+      // Filtrage par région : On ne voit que les événements de sa région OU les virtuels nationaux
+      if ((role === 'candidat' || role === 'recruiter') && region) {
+        query += " WHERE (region = $1 OR event_format = 'virtuel')";
         params.push(region);
+        
+        if (role === 'candidat') {
+          query += " AND statut = 'publie'";
+        }
       }
 
       try {
