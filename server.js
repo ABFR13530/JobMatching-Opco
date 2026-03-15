@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 const dbPool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://user:password@localhost:5432/numeric_emploi',
+  connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
