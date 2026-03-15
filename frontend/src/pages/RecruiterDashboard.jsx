@@ -22,6 +22,7 @@ const RecruiterDashboard = () => {
   const [showSlotGen, setShowSlotGen] = useState(false);
   const [slotFormData, setSlotFormData] = useState({ event_id: '', count: 10, start_time: '2026-06-15T09:00', duration: 20 });
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showStandPreview, setShowStandPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Formulaire d'offre
@@ -62,7 +63,7 @@ const RecruiterDashboard = () => {
         const res = await fetch(`/api/companies/${company.id}`);
         if (res.ok) {
           const data = await res.json();
-          setCompany(data.company);
+          setCompany(data.company || company);
         }
       }
     } catch (e) { console.error(e); }
@@ -105,6 +106,8 @@ const RecruiterDashboard = () => {
 
   const handleGenerateSlots = async (e) => {
      e.preventDefault();
+     if (!slotFormData.event_id) return alert("❌ Veuillez sélectionner un événement dans la liste avant de générer l'agenda.");
+     
      setIsSubmitting(true);
      try {
         const res = await fetch(`/api/events/${slotFormData.event_id}/slots`, {
@@ -121,8 +124,11 @@ const RecruiterDashboard = () => {
            alert("✅ Votre agenda a été généré ! Les candidats peuvent désormais réserver ces créneaux.");
            setShowSlotGen(false);
            fetchData();
+        } else {
+           const error = await res.json();
+           alert(`❌ Erreur Serveur : ${error.error || "Impossible de générer les créneaux"}`);
         }
-     } catch { alert("Erreur réseau"); }
+     } catch { alert("❌ Erreur réseau : Vérifiez votre connexion."); }
      setIsSubmitting(false);
   };
 
@@ -280,7 +286,7 @@ const RecruiterDashboard = () => {
                              <h3 className="text-xl font-bold text-slate-900 mb-2">{evt.titre}</h3>
                              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-6">📍 {evt.region} • 📅 {new Date(evt.date).toLocaleDateString()}</p>
                              <button onClick={() => { setSlotFormData({...slotFormData, event_id: evt.id}); setShowSlotGen(true); }} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-numeric-blue transition-colors text-xs uppercase tracking-widest">
-                               Gérer les créneaux
+                                Gérer les créneaux
                              </button>
                           </div>
                         ))}
@@ -296,6 +302,15 @@ const RecruiterDashboard = () => {
                        <button onClick={() => setShowSlotGen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 text-2xl font-black">×</button>
                        <h2 className="text-3xl font-display font-black mb-8 italic">Générer mon Agenda</h2>
                        <form onSubmit={handleGenerateSlots} className="space-y-6">
+                          <div>
+                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Choisir l'Événement</label>
+                             <select className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.event_id} onChange={e => setSlotFormData({...slotFormData, event_id: e.target.value})}>
+                                <option value="">-- Sélectionner un forum --</option>
+                                {events.map(evt => (
+                                   <option key={evt.id} value={evt.id}>{evt.titre} ({evt.region})</option>
+                                ))}
+                             </select>
+                          </div>
                           <div>
                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Début de disponibilité</label>
                              <input type="datetime-local" className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.start_time} onChange={e => setSlotFormData({...slotFormData, start_time: e.target.value})} />
@@ -320,7 +335,7 @@ const RecruiterDashboard = () => {
            </section>
         )}
 
-        {/* TAB STAND (NOUVEAUTÉ ALUMNFORCE) */}
+        {/* TAB STAND */}
         {activeTab === 'stand' && (
            <section className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 space-y-8">
@@ -388,7 +403,7 @@ const RecruiterDashboard = () => {
                           </div>
                        </div>
                     </div>
-                    <button className="w-full mt-8 py-4 border border-white/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition">
+                    <button onClick={() => setShowStandPreview(true)} className="w-full mt-8 py-4 border border-white/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition">
                        Voir mon stand public
                     </button>
                  </div>
@@ -462,6 +477,61 @@ const RecruiterDashboard = () => {
         )}
 
       </main>
+
+      {/* MODAL STAND PUBLIC PREVIEW */}
+      {showStandPreview && (
+         <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-fadeIn">
+            <div className="bg-white rounded-[3rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative p-0 overflow-hidden text-slate-900 text-left">
+               <button onClick={() => setShowStandPreview(false)} className="absolute top-8 right-8 text-white bg-slate-900 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-black z-20">×</button>
+               
+               <div className="bg-numeric-blue p-4 text-center text-white text-[10px] font-black uppercase tracking-widest italic">
+                  Aperçu en direct : Voici ce que les candidats voient
+               </div>
+
+               <div className="h-64 bg-slate-100 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-900 opacity-90"></div>
+                  <div className="absolute bottom-[-40px] left-12 w-32 h-32 bg-white rounded-3xl shadow-2xl flex items-center justify-center text-4xl font-black border-8 border-white text-slate-900">
+                     {company.name.substring(0,2).toUpperCase()}
+                  </div>
+               </div>
+
+               <div className="p-12 pt-16">
+                  <div className="flex justify-between items-start mb-10">
+                     <div>
+                        <h2 className="text-4xl font-display font-black mb-2 italic">{company.name}</h2>
+                        <p className="text-blue-600 font-bold uppercase tracking-widest text-xs italic">{company.industry} • {company.size}</p>
+                     </div>
+                     <button disabled className="px-10 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-sm uppercase tracking-widest">
+                        Candidature Directe
+                     </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                     <div className="lg:col-span-2 space-y-8">
+                        <div>
+                           <h3 className="text-lg font-black mb-4 italic">À propos de nous</h3>
+                           <p className="text-slate-600 leading-loose italic">"{company.description || "Aucune description fournie."}"</p>
+                        </div>
+                        {company.video_url && (
+                           <div className="rounded-3xl overflow-hidden shadow-2xl bg-black aspect-video flex items-center justify-center text-white italic">
+                              [ Vidéo Corporate : {company.video_url} ]
+                           </div>
+                        )}
+                     </div>
+                     <div className="lg:col-span-1 space-y-6">
+                        <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                           <h4 className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Liens Utiles</h4>
+                           <div className="space-y-3">
+                              <span className="block text-xs font-bold text-blue-600">{company.website_url ? '🌐 Site Web Officiel' : '🌐 Non renseigné'}</span>
+                              <span className="block text-xs font-bold text-blue-600">{company.linkedin_url ? '💼 Page LinkedIn' : '💼 Non renseigné'}</span>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      )}
     </div>
   );
 };

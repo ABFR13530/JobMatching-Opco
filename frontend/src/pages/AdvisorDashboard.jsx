@@ -27,14 +27,12 @@ const AdvisorDashboard = () => {
     document.body.removeChild(link);
   };
 
-  // Formulaire Nouvel Événement (Enrichi)
   const [newEvent, setNewEvent] = useState({ 
     titre: '', date: '', region: 'Île-de-France', 
     max_participants: 100, event_format: 'virtuel', 
     interview_duration: 20, description: '' 
   });
 
-  // Formulaire Nouveau Candidat (Saisie manuelle conseiller)
   const [newCandidate, setNewCandidate] = useState({
     nom: '', prenom: '', email: '', region: 'Île-de-France',
     niveau_employabilite: 1
@@ -78,16 +76,6 @@ const AdvisorDashboard = () => {
     setIsLoading(false);
   };
 
-  const handleValidateCompany = async (compId) => {
-    try {
-      const res = await fetch(`/api/companies/${compId}/validate`, { method: 'PATCH' });
-      if (res.ok) {
-        alert("✅ Stand validé et désormais visible par les candidats !");
-        fetchCompanies();
-      }
-    } catch { alert("Erreur réseau"); }
-  };
-
   useEffect(() => {
     if (!showPicker) {
       if (activeTab === 'events') fetchEvents();
@@ -109,8 +97,13 @@ const AdvisorDashboard = () => {
         alert("✅ Événement créé et ajouté au calendrier global !");
         setNewEvent({ titre: '', date: '', region: 'Île-de-France', max_participants: 100, event_format: 'virtuel', interview_duration: 20, description: '' });
         fetchEvents();
+      } else {
+        const error = await res.json();
+        alert(`❌ Erreur : ${error.error || "Impossible de créer l'événement"}`);
       }
-    } catch (e) { alert("Erreur réseau"); }
+    } catch (e) { 
+        alert("❌ Erreur réseau : Vérifiez votre connexion."); 
+    }
     setIsSubmitting(false);
   };
 
@@ -127,44 +120,39 @@ const AdvisorDashboard = () => {
         alert("✅ Candidat enregistré avec succès dans la CVthèque !");
         setNewCandidate({ nom: '', prenom: '', email: '', region: 'Île-de-France', niveau_employabilite: 1 });
         fetchCandidates();
+        setShowCandidateForm(false);
       } else {
-        const err = await res.json();
-        alert(`❌ Erreur: ${err.error}`);
+          const error = await res.json();
+          alert(`❌ Erreur : ${error.error}`);
       }
     } catch (e) { alert("Erreur réseau"); }
     setIsSubmitting(false);
   };
 
-  const handleQuickLogin = (acc) => {
-    localStorage.setItem('token', 'DEMO_JWT_2026');
-    localStorage.setItem('user_role', acc.role);
-    localStorage.setItem('user_name', acc.name);
-    setShowPicker(false);
+  const handleValidateCompany = async (id) => {
+    try {
+      const res = await fetch(`/api/companies/${id}/validate`, { method: 'PATCH' });
+      if (res.ok) {
+        alert("✅ Entreprise validée pour le forum.");
+        fetchCompanies();
+      }
+    } catch (e) { console.error(e); }
   };
 
   if (showPicker) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 font-sans">
-        <div className="max-w-2xl w-full">
-          <div className="text-center mb-10">
-            <h2 className="text-4xl font-display font-black text-white mb-2 uppercase tracking-tighter italic italic">Numeric'Emploi <span className="text-blue-500">Fast-Login</span></h2>
-            <p className="text-slate-400 text-sm font-medium">Portail de gestion régionale (MVP Jalon 1)</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <button onClick={() => handleQuickLogin({role:'advisor', name:'Marc Durand'})} className="group bg-slate-900 border border-white/10 p-10 rounded-[2.5rem] text-left hover:border-blue-500/50 transition-all hover:scale-105">
-                <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center text-3xl mb-6 shadow-xl group-hover:rotate-6 transition-transform italic">👩‍💼</div>
-                <h3 className="text-white font-black text-xl mb-1">Marc Durand</h3>
-                <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest italic">Conseiller IDF</p>
-            </button>
-            <button onClick={() => navigate('/dashboard/superadmin')} className="group bg-slate-900 border border-white/10 p-10 rounded-[2.5rem] text-left hover:border-purple-500/50 transition-all hover:scale-105">
-                <div className="w-16 h-16 bg-purple-600 rounded-3xl flex items-center justify-center text-3xl mb-6 shadow-xl group-hover:rotate-6 transition-transform italic">👑</div>
-                <h3 className="text-white font-black text-xl mb-1">Albane Bossan</h3>
-                <p className="text-purple-400 text-[10px] font-black uppercase tracking-widest italic">Responsable Plateforme</p>
-            </button>
-          </div>
+     return (
+        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6">
+           <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl animate-fadeIn">
+              <div className="text-6xl mb-8">🛡️</div>
+              <h2 className="text-3xl font-display font-black text-slate-900 mb-4 italic">Accès Sécurisé</h2>
+              <p className="text-slate-500 text-sm mb-10 leading-relaxed font-medium">Veuillez confirmer votre identité pour accéder au pilotage Numeric'Emploi.</p>
+              <div className="space-y-4">
+                 <button onClick={() => { localStorage.setItem('user_role', 'advisor'); localStorage.setItem('user_name', 'Conseiller Atlas'); setShowPicker(false); }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:scale-105 transition-all text-[10px] uppercase tracking-widest">Entrer sur le Dashboard</button>
+                 <Link to="/" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600">Retour à l'accueil</Link>
+              </div>
+           </div>
         </div>
-      </div>
-    );
+     );
   }
 
   return (
@@ -206,6 +194,30 @@ const AdvisorDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Date du forum</label>
+                        <input type="date" required value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Région</label>
+                        <select value={newEvent.region} onChange={e => setNewEvent({...newEvent, region: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
+                           <option>Île-de-France</option>
+                           <option>Auvergne-Rhône-Alpes</option>
+                           <option>Provence-Alpes-Côte d'Azur</option>
+                           <option>Hauts-de-France</option>
+                           <option>Nouvelle-Aquitaine</option>
+                           <option>Occitanie</option>
+                           <option>Grand Est</option>
+                           <option>Bretagne</option>
+                           <option>Pays de la Loire</option>
+                           <option>Normandie</option>
+                           <option>Bourgogne-Franche-Comté</option>
+                           <option>Centre-Val de Loire</option>
+                           <option>Corse</option>
+                        </select>
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Format</label>
                         <select value={newEvent.event_format} onChange={e => setNewEvent({...newEvent, event_format: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
                            <option value="virtuel">100% Virtuel</option>
@@ -228,148 +240,133 @@ const AdvisorDashboard = () => {
             </div>
 
             <div className="lg:col-span-2">
-              <h2 className="text-3xl font-display font-black text-slate-900 mb-8 italic flex justify-between items-center">Catalogue Événements <span>{events.length}</span></h2>
-              <div className="space-y-6">
-                {events.map(evt => (
-                  <div key={evt.id} className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 hover:shadow-2xl transition-all border-t-8 border-t-blue-600">
-                     <div className="flex justify-between items-start mb-6">
-                        <div>
-                         <h3 className="font-black text-slate-900 text-xl mb-1 italic group-hover:text-blue-600">{evt.titre}</h3>
-                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">📍 {evt.region} • 📅 {new Date(evt.date).toLocaleDateString()}</p>
-                        </div>
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${evt.statut === 'publie' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                           {evt.statut}
-                        </span>
-                     </div>
-                     <div className="flex gap-4">
-                        <div className="flex-1 bg-slate-50 p-4 rounded-2xl text-center border border-slate-100">
-                           <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Format</p>
-                           <p className="font-black text-slate-900 text-xs">{evt.event_format.toUpperCase()}</p>
-                        </div>
-                        <div className="flex-1 bg-slate-50 p-4 rounded-2xl text-center border border-slate-100">
-                           <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Durée RDV</p>
-                           <p className="font-black text-slate-900 text-xs">{evt.interview_duration} MIN</p>
-                        </div>
-                     </div>
-                     <div className="grid grid-cols-2 gap-3 mt-8 pt-6 border-t border-slate-50">
-                        <button className="py-3.5 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition">Paramètres</button>
-                        <button className="py-3.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-blue-600 transition">Dashboard Live</button>
-                     </div>
+               <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-4xl font-display font-black text-slate-900 tracking-tighter italic">Catalogue Événements</h2>
+                  <div className="px-6 py-2 bg-slate-900 text-white rounded-full text-xl font-black">{events.length}</div>
+               </div>
+               
+               {isLoading ? (
+                  <div className="py-20 text-center animate-pulse text-blue-500 font-black tracking-widest italic">SYNCHRONISATION...</div>
+               ) : events.length === 0 ? (
+                  <div className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
+                     <div className="text-6xl mb-6 opacity-20">📭</div>
+                     <p className="text-slate-400 font-bold italic">Aucun forum n'est programmé pour le moment.</p>
                   </div>
-                ))}
-              </div>
+               ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {events.map(evt => (
+                        <div key={evt.id} className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl hover:border-blue-500 transition-all group relative overflow-hidden">
+                           <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-bl-[3rem] group-hover:bg-blue-50 transition-colors"></div>
+                           <h3 className="text-xl font-bold text-slate-900 mb-2 relative z-10">{evt.titre}</h3>
+                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6 italic">📍 {evt.region} • {new Date(evt.date).toLocaleDateString()}</p>
+                           <div className="flex justify-between items-end mt-4">
+                              <span className="px-4 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg">{evt.event_format}</span>
+                              <button className="text-[10px] font-black text-slate-900 uppercase tracking-widest hover:underline">Détails Pilote →</button>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               )}
             </div>
           </div>
         )}
 
-        {/* POOL ENTREPRISES (VALUATION STANDS) */}
+        {/* TAB COMPANIES */}
         {activeTab === 'companies' && (
-          <div className="animate-fade-in-up">
-             <div className="flex justify-between items-end mb-10">
-                <h2 className="text-4xl font-display font-black text-slate-900 italic">Pool Entreprises Inscrits</h2>
-                <div className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full font-black text-xs">{companies.length} Structures actives</div>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {companies.map(comp => (
-                  <div key={comp.id} className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl transition relative group">
-                     {comp.is_validated && <div className="absolute top-6 right-6 text-green-500 font-black text-xs italic">✓ Validé</div>}
-                     <div className="w-16 h-16 bg-[#0f172a] text-white rounded-2xl flex items-center justify-center text-xl font-black mb-6 shadow-xl">
-                        {comp.name.substring(0,2).toUpperCase()}
-                     </div>
-                     <h3 className="text-xl font-black text-slate-900 mb-1 leading-none">{comp.name}</h3>
-                     <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-6">{comp.industry}</p>
-                     <p className="text-xs text-slate-500 line-clamp-3 mb-8 italic">"{comp.description}"</p>
-                     {!comp.is_validated && (
-                        <button onClick={() => handleValidateCompany(comp.id)} className="w-full py-4 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition">Valider le Stand</button>
-                     )}
-                     <button className="w-full mt-3 py-4 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition">Consulter Dossier</button>
-                  </div>
-                ))}
-             </div>
-          </div>
+           <div className="space-y-8">
+              <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
+                 <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h2 className="text-2xl font-display font-black text-slate-900 italic">Pool des Entreprises</h2>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{companies.length} Partenaires</span>
+                 </div>
+                 <div className="p-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                       {companies.map(comp => (
+                          <div key={comp.id} className="border border-slate-100 rounded-[2rem] p-8 bg-slate-50/30 hover:bg-white hover:shadow-xl transition-all">
+                             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm mb-6 flex items-center justify-center text-2xl font-black text-slate-900">{comp.name.substring(0,1)}</div>
+                             <h3 className="font-bold text-slate-900 text-lg mb-1">{comp.name}</h3>
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">{comp.industry}</p>
+                             {comp.is_validated ? (
+                                <span className="block text-center py-3 bg-green-50 text-green-600 rounded-xl text-[9px] font-black uppercase border border-green-100">Validée pour Forum</span>
+                             ) : (
+                                <button onClick={() => handleValidateCompany(comp.id)} className="w-full py-3 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-blue-500/20 hover:scale-105 transition-all">Valider l'adhésion</button>
+                             )}
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+              </div>
+           </div>
         )}
 
-        {/* POOL CANDIDATS */}
+        {/* TAB CANDIDATES (La CVthèque Alumn) */}
         {activeTab === 'candidates' && (
-          <div className="animate-fade-in-up">
-             <div className="flex justify-between items-end mb-10">
-                <h2 className="text-4xl font-display font-black text-slate-900 italic">CVthèque Forum</h2>
-                <div className="flex gap-4">
-                  <button onClick={handleExportCSV} className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition">Exporter la Qualif CSV</button>
-                  <button onClick={() => setShowCandidateForm(!showCandidateForm)} className="px-8 py-4 bg-numeric-orange text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 hover:scale-105 transition">+ Saisie Candidat</button>
-                </div>
-             </div>
+           <div className="space-y-8">
+              <div className="flex justify-between items-center">
+                 <h2 className="text-4xl font-display font-black text-slate-900 tracking-tighter italic">CVthèque Qualifiée</h2>
+                 <div className="flex gap-4">
+                    <button onClick={handleExportCSV} className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-600 transition-all">Exporter la Qualif CSV</button>
+                    <button onClick={() => setShowCandidateForm(true)} className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:scale-105 transition-all">+ Nouveau Talent</button>
+                 </div>
+              </div>
 
-             {/* Formulaire de saisie manuelle (Toggle) */}
-             {showCandidateForm && (
-               <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 p-10 mb-12 animate-fadeIn">
-                  <h3 className="text-2xl font-display font-black text-slate-900 mb-8 italic">📝 Fiche Nouvelle Inscription</h3>
-                  <form onSubmit={handleCreateCandidate} className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Prénom</label>
-                        <input type="text" required value={newCandidate.prenom} onChange={e => setNewCandidate({...newCandidate, prenom: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
-                     </div>
-                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nom</label>
-                        <input type="text" required value={newCandidate.nom} onChange={e => setNewCandidate({...newCandidate, nom: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
-                     </div>
-                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Email</label>
-                        <input type="email" required value={newCandidate.email} onChange={e => setNewCandidate({...newCandidate, email: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
-                     </div>
-                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Région</label>
-                        <select value={newCandidate.region} onChange={e => setNewCandidate({...newCandidate, region: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
-                           <option>Île-de-France</option><option>Auvergne-Rhône-Alpes</option><option>Hauts-de-France</option><option>Provence-Alpes-Côte d'Azur</option><option>Occitanie</option>
-                        </select>
-                     </div>
-                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Niveau Employabilité</label>
-                        <select value={newCandidate.niveau_employabilite} onChange={e => setNewCandidate({...newCandidate, niveau_employabilite: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
-                           <option value="1">Niveau 1 (Immédiat)</option>
-                           <option value="2">Niveau 2 (Accompagné)</option>
-                           <option value="3">Niveau 3 (En formation)</option>
-                        </select>
-                     </div>
-                     <div className="flex items-end">
-                        <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-numeric-blue text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:scale-105 transition-all text-[10px] uppercase tracking-widest">
-                           {isSubmitting ? 'Enregistrement...' : 'Valider l\'inscription'}
-                        </button>
-                     </div>
-                  </form>
-               </div>
-             )}
-             <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
-                <table className="w-full text-left">
-                   <thead className="bg-[#0f172a] text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                      <tr>
-                        <th className="px-10 py-6">Candidat Principal</th>
-                        <th className="px-10 py-6">Région Forum</th>
-                        <th className="px-10 py-6">Qualif.</th>
-                        <th className="px-10 py-6">Actions</th>
-                      </tr>
-                   </thead>
-                   <tbody className="divide-y divide-slate-100">
-                      {candidates.map(cand => (
-                        <tr key={cand.id} className="hover:bg-slate-50/50 transition group">
-                           <td className="px-10 py-6">
-                              <p className="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase italic">{cand.prenom} {cand.nom}</p>
-                              <p className="text-[10px] text-slate-400 font-bold lowercase">{cand.email}</p>
-                           </td>
-                           <td className="px-10 py-6 text-xs font-bold text-slate-600">{cand.region}</td>
-                           <td className="px-10 py-6">
-                              <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider ${cand.niveau_employabilite === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>Niveau {cand.niveau_employabilite}</span>
-                           </td>
-                           <td className="px-10 py-6">
-                              <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Analyser Profil →</button>
-                           </td>
-                        </tr>
-                      ))}
-                   </tbody>
-                </table>
-             </div>
-          </div>
+              {showCandidateForm && (
+                 <div className="bg-white rounded-[3rem] p-10 border-2 border-blue-100 shadow-2xl animate-fadeIn">
+                    <h3 className="text-xl font-bold mb-8 italic">📄 Fiche d'inscription Candidat</h3>
+                    <form onSubmit={handleCreateCandidate} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <input type="text" placeholder="Nom" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.nom} onChange={e => setNewCandidate({...newCandidate, nom: e.target.value})} />
+                       <input type="text" placeholder="Prénom" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.prenom} onChange={e => setNewCandidate({...newCandidate, prenom: e.target.value})} />
+                       <input type="email" placeholder="Email" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.email} onChange={e => setNewCandidate({...newCandidate, email: e.target.value})} />
+                       <select className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.niveau_employabilite} onChange={e => setNewCandidate({...newCandidate, niveau_employabilite: e.target.value})}>
+                          <option value="1">Niveau 1 - Débutant</option>
+                          <option value="2">Niveau 2 - Confirmé</option>
+                          <option value="3">Niveau 3 - Senior / Prêt à l'emploi</option>
+                       </select>
+                       <div className="md:col-span-2 flex justify-end gap-4 pt-4">
+                          <button type="button" onClick={() => setShowCandidateForm(false)} className="px-8 py-4 font-bold text-slate-400 text-xs">Annuler</button>
+                          <button type="submit" disabled={isSubmitting} className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 uppercase text-[10px] tracking-widest">{isSubmitting ? 'Enregistrement...' : 'Enregistrer le Profil'}</button>
+                       </div>
+                    </form>
+                 </div>
+              )}
+
+              <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
+                 <table className="w-full text-left border-collapse">
+                    <thead>
+                       <tr className="bg-slate-50/50 border-b border-slate-100">
+                          <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Candidat</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Email</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Région</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Employabilité</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Action</th>
+                       </tr>
+                    </thead>
+                    <tbody>
+                       {candidates.length === 0 ? (
+                          <tr><td colSpan="5" className="px-8 py-20 text-center text-slate-400 italic font-bold">La CVthèque est vide pour le moment.</td></tr>
+                       ) : (
+                          candidates.map(c => (
+                             <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
+                                <td className="px-8 py-6 font-bold text-slate-900">{c.nom} {c.prenom}</td>
+                                <td className="px-8 py-6 text-sm text-slate-500 ">{c.email}</td>
+                                <td className="px-8 py-6 text-sm font-bold text-slate-900">{c.region}</td>
+                                <td className="px-8 py-6">
+                                   <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm border ${c.niveau_employabilite === 3 ? 'bg-green-50 text-green-600 border-green-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                                      Niveau {c.niveau_employabilite}
+                                   </span>
+                                </td>
+                                <td className="px-8 py-6">
+                                   <button className="text-blue-600 font-bold text-[10px] uppercase tracking-widest hover:underline">Fiche Alumn →</button>
+                                </td>
+                             </tr>
+                          ))
+                       )}
+                    </tbody>
+                 </table>
+              </div>
+           </div>
         )}
+
       </main>
     </div>
   );
