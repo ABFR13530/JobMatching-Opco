@@ -11,6 +11,7 @@ const AdvisorDashboard = () => {
   const [candidates, setCandidates] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedEventDetails, setSelectedEventDetails] = useState(null);
 
   const userRegion = localStorage.getItem('user_region') || 'Île-de-France';
 
@@ -61,6 +62,20 @@ const AdvisorDashboard = () => {
       }
     } catch (e) { console.error(e); }
     setIsLoading(false);
+  };
+
+  const fetchEventDashboard = async (eventId) => {
+     setIsLoading(true);
+     try {
+        const res = await fetch(`/api/events/${eventId}/dashboard`);
+        if (res.ok) {
+           const data = await res.json();
+           setSelectedEventDetails(data);
+        }
+     } catch (e) {
+        alert("Erreur lors de la récupération des détails du pilotage.");
+     }
+     setIsLoading(false);
   };
 
   const fetchCandidates = async () => {
@@ -127,6 +142,22 @@ const AdvisorDashboard = () => {
     setIsSubmitting(false);
   };
 
+  const handleToggleStatus = async (eventId, currentStatus) => {
+    const newStatus = currentStatus === 'publie' ? 'brouillon' : 'publie';
+    try {
+      const res = await fetch(`/api/events/${eventId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut: newStatus })
+      });
+      if (res.ok) {
+        fetchEvents();
+      }
+    } catch (e) {
+      alert("Erreur lors de la mise à jour du statut.");
+    }
+  };
+
   const handleCreateCandidate = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -162,7 +193,7 @@ const AdvisorDashboard = () => {
   if (showPicker) {
      const regions = ["Île-de-France", "Auvergne-Rhône-Alpes", "Provence-Alpes-Côte d'Azur", "Hauts-de-France", "Nouvelle-Aquitaine", "Occitanie", "Grand Est", "Bretagne", "Pays de la Loire", "Normandie", "Bourgogne-Franche-Comté", "Centre-Val de Loire", "Corse"];
      return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 text-slate-900">
            <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl animate-fadeIn">
               <div className="text-6xl mb-8">🛡️</div>
               <h2 className="text-3xl font-display font-black text-slate-900 mb-4 italic">Pilotage Atlas</h2>
@@ -190,12 +221,12 @@ const AdvisorDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-20">
+    <div className="min-h-screen bg-slate-50 font-sans pb-20 text-slate-900">
       <header className="bg-[#0f172a] text-white relative overflow-hidden shadow-2xl border-b border-white/5">
         <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-blue-600 rounded-full blur-[120px] opacity-10 -translate-y-1/2"></div>
         <div className="max-w-7xl mx-auto px-6 py-8 relative z-10 flex justify-between items-center text-white">
           <div className="flex items-center gap-6">
-            <Link to="/" className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center font-display font-black text-slate-900 text-3xl shadow-xl hover:scale-110 transition-transform">N</Link>
+            <Link to="/" className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center font-display font-black text-slate-900 text-3xl shadow-xl hover:scale-110 transition-transform hover:text-blue-600">N</Link>
             <div>
               <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[10px] font-black tracking-widest uppercase mb-1">Moniteur de Forum • {userRegion}</span>
               <h1 className="text-3xl font-display font-black tracking-tighter leading-none italic">Direction {localStorage.getItem('user_name')}</h1>
@@ -311,7 +342,7 @@ const AdvisorDashboard = () => {
                   <div className="px-6 py-2 bg-slate-900 text-white rounded-full text-xl font-black">{events.length}</div>
                </div>
                
-               {isLoading ? (
+               {isLoading && !selectedEventDetails ? (
                   <div className="py-20 text-center animate-pulse text-blue-500 font-black tracking-widest italic">SYNCHRONISATION...</div>
                ) : events.length === 0 ? (
                   <div className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
@@ -324,11 +355,25 @@ const AdvisorDashboard = () => {
                         <div key={evt.id} className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl hover:border-blue-500 transition-all group relative overflow-hidden">
                            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-bl-[3rem] group-hover:bg-blue-50 transition-colors"></div>
                            <h3 className="text-xl font-bold text-slate-900 mb-2 relative z-10">{evt.titre}</h3>
-                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 italic">📍 {evt.region} • {new Date(evt.date).toLocaleDateString()}</p>
-                           <p className="text-[9px] font-bold text-slate-400 uppercase mb-6 tracking-widest">🕒 {evt.heure_debut} - {evt.heure_fin}</p>
-                           <div className="flex justify-between items-end mt-4">
-                              <span className="px-4 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg">{evt.event_format}</span>
-                              <button className="text-[10px] font-black text-slate-900 uppercase tracking-widest hover:underline">Détails Pilote →</button>
+                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 italic text-left">📍 {evt.region} • {new Date(evt.date).toLocaleDateString()}</p>
+                           <p className="text-[9px] font-bold text-slate-400 uppercase mb-6 tracking-widest text-left">🕒 {evt.heure_debut} - {evt.heure_fin}</p>
+                           <div className="flex flex-wrap justify-between items-center mt-4 gap-4">
+                              <div className="flex gap-2">
+                                 <span className="px-4 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg">{evt.event_format}</span>
+                                 <button 
+                                    onClick={() => handleToggleStatus(evt.id, evt.statut)}
+                                    className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-lg border transition-all ${
+                                       evt.statut === 'publie' 
+                                       ? 'bg-green-50 text-green-600 border-green-200' 
+                                       : 'bg-orange-50 text-orange-600 border-orange-200'
+                                    }`}
+                                 >
+                                    {evt.statut === 'publie' ? 'Visible' : 'Brouillon'}
+                                 </button>
+                              </div>
+                              <div className="flex gap-4">
+                                 <button onClick={() => fetchEventDashboard(evt.id)} className="text-[10px] font-black text-slate-900 uppercase tracking-widest hover:underline">Détails Pilote →</button>
+                              </div>
                            </div>
                         </div>
                      ))}
@@ -336,6 +381,89 @@ const AdvisorDashboard = () => {
                )}
             </div>
           </div>
+        )}
+
+        {/* MODAL DETAIL PILOTE (DASHBOARD ÉVÉNEMENT) */}
+        {selectedEventDetails && (
+           <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-50 flex items-center justify-center p-6 animate-fadeIn text-slate-900">
+              <div className="bg-white rounded-[3rem] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative p-0 overflow-hidden text-left">
+                 <button onClick={() => setSelectedEventDetails(null)} className="absolute top-8 right-8 text-white bg-slate-900 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-black z-20">×</button>
+                 
+                 <div className="bg-blue-600 p-4 text-center text-white text-[10px] font-black uppercase tracking-widest italic">
+                    Pilotage Opérationnel : {selectedEventDetails.event.titre}
+                 </div>
+
+                 <div className="p-12">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                       <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Recruteurs Inscrits</p>
+                          <p className="text-4xl font-black text-slate-900 tracking-tighter">{selectedEventDetails.recruiters.length}</p>
+                       </div>
+                       <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Total Créneaux</p>
+                          <p className="text-4xl font-black text-slate-900 tracking-tighter">
+                             {selectedEventDetails.recruiters.reduce((acc, r) => acc + parseInt(r.total_slots), 0)}
+                          </p>
+                       </div>
+                       <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase mb-2">RDV Confirmés</p>
+                          <p className="text-4xl font-black text-blue-600 tracking-tighter">
+                             {selectedEventDetails.bookings.length}
+                          </p>
+                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                       {/* Section Recruteurs */}
+                       <div>
+                          <h3 className="text-xl font-black mb-6 italic underline decoration-blue-500 decoration-4">Entreprises Exposantes</h3>
+                          <div className="space-y-4">
+                             {selectedEventDetails.recruiters.length === 0 ? (
+                                <p className="text-xs text-slate-400 italic">Aucune entreprise n'a encore généré d'agenda.</p>
+                             ) : (
+                                selectedEventDetails.recruiters.map(r => (
+                                   <div key={r.id} className="flex justify-between items-center p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                      <div>
+                                         <p className="font-bold text-slate-900">{r.name}</p>
+                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{r.industry}</p>
+                                      </div>
+                                      <div className="text-right">
+                                         <p className="text-[10px] font-black text-blue-600">{r.booked_slots} / {r.total_slots} RDV</p>
+                                         <div className="w-24 bg-slate-200 h-1.5 rounded-full mt-1">
+                                            <div className="bg-blue-600 h-full rounded-full" style={{width: `${(r.booked_slots/r.total_slots)*100}%`}}></div>
+                                         </div>
+                                      </div>
+                                   </div>
+                                ))
+                             )}
+                          </div>
+                       </div>
+
+                       {/* Section Bookings (Dernières résas) */}
+                       <div>
+                          <h3 className="text-xl font-black mb-6 italic underline decoration-orange-500 decoration-4">Planning des Matchs</h3>
+                          <div className="space-y-4">
+                             {selectedEventDetails.bookings.length === 0 ? (
+                                <p className="text-xs text-slate-400 italic">En attente des premières réservations candidats.</p>
+                             ) : (
+                                selectedEventDetails.bookings.map(b => (
+                                   <div key={b.id} className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm flex items-start gap-4">
+                                      <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 uppercase">
+                                         {new Date(b.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                      </div>
+                                      <div>
+                                         <p className="text-xs font-black text-slate-900">{b.candidate_nom} {b.candidate_prenom} ⚡ {b.company_name}</p>
+                                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Lien de salle : <span className="text-blue-500 hover:underline">Meet Jitsi</span></p>
+                                      </div>
+                                   </div>
+                                ))
+                             )}
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
         )}
 
         {/* TAB COMPANIES */}
@@ -379,12 +507,12 @@ const AdvisorDashboard = () => {
 
               {showCandidateForm && (
                  <div className="bg-white rounded-[3rem] p-10 border-2 border-blue-100 shadow-2xl animate-fadeIn">
-                    <h3 className="text-xl font-bold mb-8 italic">📄 Fiche d'inscription Candidat</h3>
-                    <form onSubmit={handleCreateCandidate} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                       <input type="text" placeholder="Nom" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.nom} onChange={e => setNewCandidate({...newCandidate, nom: e.target.value})} />
-                       <input type="text" placeholder="Prénom" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.prenom} onChange={e => setNewCandidate({...newCandidate, prenom: e.target.value})} />
-                       <input type="email" placeholder="Email" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.email} onChange={e => setNewCandidate({...newCandidate, email: e.target.value})} />
-                       <select className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm" value={newCandidate.niveau_employabilite} onChange={e => setNewCandidate({...newCandidate, niveau_employabilite: e.target.value})}>
+                    <h3 className="text-xl font-bold mb-8 italic text-slate-900">📄 Fiche d'inscription Candidat</h3>
+                    <form onSubmit={handleCreateCandidate} className="grid grid-cols-1 md:grid-cols-2 gap-8 text-slate-900">
+                       <input type="text" placeholder="Nom" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm font-medium" value={newCandidate.nom} onChange={e => setNewCandidate({...newCandidate, nom: e.target.value})} />
+                       <input type="text" placeholder="Prénom" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm font-medium" value={newCandidate.prenom} onChange={e => setNewCandidate({...newCandidate, prenom: e.target.value})} />
+                       <input type="email" placeholder="Email" required className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm font-medium" value={newCandidate.email} onChange={e => setNewCandidate({...newCandidate, email: e.target.value})} />
+                       <select className="w-full rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm font-medium" value={newCandidate.niveau_employabilite} onChange={e => setNewCandidate({...newCandidate, niveau_employabilite: e.target.value})}>
                           <option value="1">Niveau 1 - Débutant</option>
                           <option value="2">Niveau 2 - Confirmé</option>
                           <option value="3">Niveau 3 - Senior / Prêt à l'emploi</option>
