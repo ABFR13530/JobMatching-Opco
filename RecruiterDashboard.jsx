@@ -106,6 +106,8 @@ const RecruiterDashboard = () => {
 
   const handleGenerateSlots = async (e) => {
      e.preventDefault();
+     if (!slotFormData.event_id) return alert("❌ Veuillez sélectionner un événement dans la liste avant de générer l'agenda.");
+     
      setIsSubmitting(true);
      try {
         const res = await fetch(`/api/events/${slotFormData.event_id}/slots`, {
@@ -122,8 +124,11 @@ const RecruiterDashboard = () => {
            alert("✅ Votre agenda a été généré ! Les candidats peuvent désormais réserver ces créneaux.");
            setShowSlotGen(false);
            fetchData();
+        } else {
+           const error = await res.json();
+           alert(`❌ Erreur Serveur : ${error.error || "Impossible de générer les créneaux"}`);
         }
-     } catch { alert("Erreur réseau"); }
+     } catch { alert("❌ Erreur réseau : Vérifiez votre connexion."); }
      setIsSubmitting(false);
   };
 
@@ -297,6 +302,15 @@ const RecruiterDashboard = () => {
                        <button onClick={() => setShowSlotGen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 text-2xl font-black">×</button>
                        <h2 className="text-3xl font-display font-black mb-8 italic">Générer mon Agenda</h2>
                        <form onSubmit={handleGenerateSlots} className="space-y-6">
+                          <div>
+                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Choisir l'Événement</label>
+                             <select className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.event_id} onChange={e => setSlotFormData({...slotFormData, event_id: e.target.value})}>
+                                <option value="">-- Sélectionner un forum --</option>
+                                {events.map(evt => (
+                                   <option key={evt.id} value={evt.id}>{evt.titre} ({evt.region})</option>
+                                ))}
+                             </select>
+                          </div>
                           <div>
                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Début de disponibilité</label>
                              <input type="datetime-local" className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.start_time} onChange={e => setSlotFormData({...slotFormData, start_time: e.target.value})} />
