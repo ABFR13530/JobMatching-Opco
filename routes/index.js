@@ -61,6 +61,8 @@ module.exports = (db) => {
   router.get('/events', eventCtrl.listEvents);
   router.get('/events/:id/slots', eventCtrl.listSlots);
   router.post('/events/:id/slots', eventCtrl.createSlots);
+  router.get('/events/:id/dashboard', eventCtrl.getEventDashboard);
+  router.patch('/events/:id/status', eventCtrl.updateEventStatus);
   
   // Endpoint critique de réservation transactionnelle
   router.post('/events/book', eventCtrl.bookSlot);
