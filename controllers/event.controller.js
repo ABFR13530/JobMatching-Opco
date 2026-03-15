@@ -238,6 +238,22 @@ module.exports = (db) => {
       } finally {
         client.release();
       }
+    },
+
+    /**
+     * @route PATCH /api/events/:id/status
+     * @desc Changer le statut d'un événement (publie/brouillon)
+     */
+    async updateEventStatus(req, res) {
+      const { id } = req.params;
+      const { statut } = req.body;
+      try {
+        const query = "UPDATE job_matching_events SET statut = $1 WHERE id = $2 RETURNING *";
+        const { rows } = await db.query(query, [statut, id]);
+        res.status(200).json({ success: true, event: rows[0] });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
     }
   };
 };
