@@ -18,7 +18,8 @@ async function runMigrations() {
     '004_companies_stand_schema.sql',
     '005_events_advanced_schema.sql',
     '006_notifications_schema.sql',
-    '007_job_applications_schema.sql'
+    '007_job_applications_schema.sql',
+    '008_events_refined_dates.sql'
   ];
 
   for (const file of migrationFiles) {
