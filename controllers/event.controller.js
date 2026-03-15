@@ -32,7 +32,7 @@ module.exports = (db) => {
             heure_debut, heure_fin, pause_debut, pause_fin,
             statut, created_by_region
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'brouillon', $13) RETURNING *
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'publie', $13) RETURNING *
         `;
         const { rows } = await db.query(query, [
           titre, date, date_fin || date, region, max_participants, 
@@ -104,7 +104,23 @@ module.exports = (db) => {
       const { id } = req.params;
       const { recruiter_id, start_time, count, duration } = req.body;
       
+      const client = await db.connect();
       try {
+        await client.query('BEGIN');
+
+        // 1. Inscrire l'entreprise à l'événement si pas déjà fait
+        await client.query(`
+          INSERT INTO event_companies (event_id, company_id)
+          VALUES ($1, $2)
+          ON CONFLICT (event_id, company_id) DO NOTHING
+        `, [id, recruiter_id]);
+
+        // 2. Passer l'événement en statut 'publie' automatiquement si c'était en brouillon
+        await client.query(`
+          UPDATE job_matching_events SET statut = 'publie' 
+          WHERE id = $1 AND statut = 'brouillon'
+        `, [id]);
+
         let currentStart = new Date(start_time);
         const slots = [];
         
@@ -115,14 +131,62 @@ module.exports = (db) => {
             INSERT INTO event_slots (event_id, recruiter_id, start_time, end_time)
             VALUES ($1, $2, $3, $4) RETURNING *
           `;
-          const { rows } = await db.query(query, [id, recruiter_id, currentStart, currentEnd]);
+          const { rows } = await client.query(query, [id, recruiter_id, currentStart, currentEnd]);
           slots.push(rows[0]);
           
           // Intervalle de 5 min entre les RDV
           currentStart = new Date(currentEnd.getTime() + 5 * 60000);
         }
         
+        await client.query('COMMIT');
         res.status(201).json({ success: true, slots });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+      } finally {
+        client.release();
+      }
+    },
+
+    /**
+     * @route GET /api/events/:id/dashboard
+     * @desc Détails complets pour le pilotage conseiller (Recruteurs, RDV, Stats)
+     */
+    async getEventDashboard(req, res) {
+      const { id } = req.params;
+      try {
+        // 1. Infos événement
+        const eventRes = await db.query("SELECT * FROM job_matching_events WHERE id = $1", [id]);
+        if (eventRes.rows.length === 0) return res.status(404).json({ error: "Événement non trouvé." });
+        const event = eventRes.rows[0];
+
+        // 2. Liste des recruteurs inscrits (qui ont des créneaux)
+        const recruitersRes = await db.query(`
+          SELECT DISTINCT c.id, c.name, c.industry,
+          (SELECT count(*) FROM event_slots WHERE event_id = $1 AND recruiter_id = c.id) as total_slots,
+          (SELECT count(*) FROM event_slots WHERE event_id = $1 AND recruiter_id = c.id AND is_booked = true) as booked_slots
+          FROM companies c
+          JOIN event_slots s ON c.id = s.recruiter_id
+          WHERE s.event_id = $1
+        `, [id]);
+
+        // 3. Liste des rendez-vous (bookings)
+        const bookingsRes = await db.query(`
+          SELECT b.*, s.start_time, s.end_time, c.nom as candidate_nom, c.prenom as candidate_prenom, co.name as company_name
+          FROM event_bookings b
+          JOIN event_slots s ON b.slot_id = s.id
+          JOIN candidates c ON b.candidate_id = c.id
+          JOIN companies co ON s.recruiter_id = co.id
+          WHERE s.event_id = $1
+          ORDER BY s.start_time ASC
+        `, [id]);
+
+        res.status(200).json({
+          success: true,
+          event,
+          recruiters: recruitersRes.rows,
+          bookings: bookingsRes.rows
+        });
       } catch (err) {
         res.status(500).json({ error: err.message });
       }
