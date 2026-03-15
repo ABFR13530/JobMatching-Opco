@@ -63,7 +63,7 @@ const RecruiterDashboard = () => {
         const res = await fetch(`/api/companies/${company.id}`);
         if (res.ok) {
           const data = await res.json();
-          setCompany(data.company);
+          setCompany(data.company || company);
         }
       }
     } catch (e) { console.error(e); }
@@ -286,7 +286,7 @@ const RecruiterDashboard = () => {
                              <h3 className="text-xl font-bold text-slate-900 mb-2">{evt.titre}</h3>
                              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-6">📍 {evt.region} • 📅 {new Date(evt.date).toLocaleDateString()}</p>
                              <button onClick={() => { setSlotFormData({...slotFormData, event_id: evt.id}); setShowSlotGen(true); }} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-numeric-blue transition-colors text-xs uppercase tracking-widest">
-                               Gérer les créneaux
+                                Gérer les créneaux
                              </button>
                           </div>
                         ))}
@@ -335,7 +335,7 @@ const RecruiterDashboard = () => {
            </section>
         )}
 
-        {/* TAB STAND (NOUVEAUTÉ ALUMNFORCE) */}
+        {/* TAB STAND */}
         {activeTab === 'stand' && (
            <section className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 space-y-8">
@@ -478,7 +478,7 @@ const RecruiterDashboard = () => {
 
       </main>
 
-      {/* MODAL STAND PUBLIC PREVIEW (RECUTREUR) */}
+      {/* MODAL STAND PUBLIC PREVIEW */}
       {showStandPreview && (
          <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-fadeIn">
             <div className="bg-white rounded-[3rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative p-0 overflow-hidden text-slate-900 text-left">
@@ -488,7 +488,6 @@ const RecruiterDashboard = () => {
                   Aperçu en direct : Voici ce que les candidats voient
                </div>
 
-               {/* Header Stand */}
                <div className="h-64 bg-slate-100 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-900 opacity-90"></div>
                   <div className="absolute bottom-[-40px] left-12 w-32 h-32 bg-white rounded-3xl shadow-2xl flex items-center justify-center text-4xl font-black border-8 border-white text-slate-900">
