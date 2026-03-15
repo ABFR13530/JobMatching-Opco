@@ -2,11 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const RecruiterDashboard = () => {
-  const [activeTab, setActiveTab] = useState('events'); // events | offers
+  const [activeTab, setActiveTab] = useState('events'); // events | offers | stand
   
   // États de données
   const [events, setEvents] = useState([]);
   const [offers, setOffers] = useState([]);
+  const [company, setCompany] = useState({
+    id: 1, // Fixé à 1 pour la démo "Fast Login" Capgemini
+    name: 'Capgemini France',
+    description: '',
+    website_url: '',
+    linkedin_url: '',
+    video_url: '',
+    industry: 'Services Numériques',
+    size: 'Grande Entreprise'
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Formulaire d'offre
@@ -22,15 +32,41 @@ const RecruiterDashboard = () => {
     try {
       if (activeTab === 'events') {
         const res = await fetch('/api/events');
-        if (res.ok) setEvents((await res.json()).events || []);
-      } else {
+        if (res.ok) {
+          const data = await res.json();
+          setEvents(data.events || []);
+        }
+      } else if (activeTab === 'offers') {
         const res = await fetch('/api/offers');
-        if (res.ok) setOffers((await res.json()).offers || []);
+        if (res.ok) {
+          const data = await res.json();
+          setOffers(data.offers || []);
+        }
+      } else if (activeTab === 'stand') {
+        const res = await fetch(`/api/companies/${company.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCompany(data.company);
+        }
       }
-    } catch {
-      // Ignorer pour la maquette
-    }
+    } catch (e) { console.error(e); }
     setIsLoading(false);
+  };
+
+  const handleUpdateStand = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/companies/${company.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(company)
+      });
+      if (res.ok) {
+        alert("✅ Stand mis à jour avec succès ! Vos modifications sont visibles par les candidats.");
+      }
+    } catch (e) { alert("Erreur réseau"); }
+    setIsSubmitting(false);
   };
 
   const handleCreateOffer = async (e) => {
@@ -40,120 +76,107 @@ const RecruiterDashboard = () => {
       const res = await fetch('/api/offers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newOffer)
+        body: JSON.stringify({ ...newOffer, company_id: company.id })
       });
       if(res.ok) {
-        alert("✅ Offre publiée avec succès ! Elle est maintenant visible par les candidats qualifiés.");
+        alert("✅ Offre publiée avec succès !");
         setNewOffer({ title: '', description: '', contract_type: 'CDI', location: 'Paris', salary_range: '', is_remote: false });
         fetchData();
-      } else {
-        const err = await res.json();
-        alert("❌ Erreur lors de la publication : " + (err.error || "Problème serveur"));
       }
-    } catch (e) {
-      alert("⚠️ Erreur réseau : impossible de joindre le serveur.");
-    }
+    } catch (e) { alert("Erreur réseau"); }
     setIsSubmitting(false);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20">
       
-      {/* Header Corporate / Entreprise */}
-      <header className="bg-slate-900 text-white relative overflow-hidden border-b border-slate-800">
-        <div className="absolute left-0 top-0 w-full h-[600px] bg-gradient-to-r from-blue-600/20 to-slate-900/10 blur-[80px] -z-0"></div>
-        <div className="max-w-7xl mx-auto px-6 py-10 relative z-10 text-white">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center font-display font-bold text-slate-900 text-2xl hover:scale-105 transition">ENT</Link>
+      {/* Header Corporate Ultra-Premium */}
+      <header className="bg-[#0f172a] text-white relative overflow-hidden border-b border-white/5">
+        <div className="absolute left-0 top-0 w-full h-full bg-gradient-to-br from-blue-600/10 via-transparent to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-8">
+              <Link to="/" className="w-20 h-20 bg-white rounded-3xl shadow-2xl flex items-center justify-center font-display font-black text-slate-900 text-3xl hover:scale-105 transition-transform duration-500">
+                {company.name.substring(0,2).toUpperCase()}
+              </Link>
               <div>
-                <span className="inline-block px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-xs font-bold tracking-widest uppercase mb-4 border border-slate-700">
-                  Espace Entreprise
-                </span>
-                <h1 className="text-4xl lg:text-5xl font-display font-bold text-white tracking-tight leading-tight">
-                  Trouvez vos futurs talents
+                <div className="flex items-center gap-3 mb-2">
+                   <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[10px] font-bold tracking-widest uppercase">Espace Exposant</span>
+                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">En Ligne</span>
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-display font-black tracking-tighter leading-none">
+                  Bonjour, {company.name}
                 </h1>
               </div>
             </div>
-            <div className="flex items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700 backdrop-blur">
-              <div className="text-right">
-                <p className="font-semibold text-sm">Capgemini France</p>
-                <Link to="/" className="text-xs text-orange-400 font-bold hover:underline">Se déconnecter</Link>
-              </div>
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">CF</div>
+            
+            <div className="flex gap-4">
+              <button 
+                onClick={() => { localStorage.clear(); window.location.href = '/'; }}
+                className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-bold transition-all backdrop-blur-md"
+              >
+                Déconnexion
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Tabs Menu */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 flex gap-8">
-          <button onClick={() => setActiveTab('events')} className={`py-4 font-medium text-sm transition-all border-b-2 ${activeTab === 'events' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
-             🗓️ Vos Job Dating
+      {/* Navigation Tabs (Style AlumnForce) */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 flex gap-10">
+          <button onClick={() => setActiveTab('events')} className={`py-5 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'events' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+             🗓️ Job Dating
           </button>
-          <button onClick={() => setActiveTab('offers')} className={`py-4 font-medium text-sm transition-all border-b-2 ${activeTab === 'offers' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
-             📝 Dépôt d'Offres d'Emplois
+          <button onClick={() => setActiveTab('offers')} className={`py-5 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'offers' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+             📝 Offres
+          </button>
+          <button onClick={() => setActiveTab('stand')} className={`py-5 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'stand' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+             🏢 Mon Stand Virtuel
           </button>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-6 mt-10">
+      <main className="max-w-7xl mx-auto px-6 mt-12 animate-fade-in-up">
         
         {/* TAB EVENTS */}
         {activeTab === 'events' && (
-           <section className="animate-fade-in-up">
-              {/* KPIs Job Dating ... */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-50 text-brand-600 rounded-2xl flex justify-center items-center text-2xl shadow-inner">🤝</div>
-                    <div>
-                      <div className="text-3xl font-display font-bold text-slate-900">12</div>
-                      <div className="text-sm font-medium text-slate-500">Entretiens Réalisés</div>
+           <section className="space-y-8">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-[2rem] p-10 text-white shadow-2xl flex flex-col md:flex-row justify-between items-center gap-8 relative overflow-hidden">
+                 <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                 <div className="relative z-10 text-center md:text-left">
+                    <h2 className="text-3xl font-display font-black mb-2 italic">Prochain Rendez-vous !</h2>
+                    <p className="text-blue-100 font-medium">Job Matching Régional - Paris 2026</p>
+                    <div className="mt-6 flex gap-4 justify-center md:justify-start">
+                       <div className="bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
+                          <span className="block text-2xl font-black">12</span>
+                          <span className="text-[10px] uppercase font-bold text-blue-200">Entretiens</span>
+                       </div>
                     </div>
                  </div>
-                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-6">
-                    <div className="w-16 h-16 bg-green-50 text-green-600 rounded-2xl flex justify-center items-center text-2xl shadow-inner">⭐</div>
-                    <div>
-                      <div className="text-3xl font-display font-bold text-slate-900">4</div>
-                      <div className="text-sm font-medium text-slate-500">Talents Shortlistés</div>
-                    </div>
-                 </div>
-                 <div className="bg-gradient-to-br from-brand-600 to-brand-800 rounded-2xl p-6 shadow-lg shadow-brand-900/20 text-white flex items-center gap-6 relative overflow-hidden">
-                    <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                    <div className="relative z-10">
-                      <div className="text-3xl font-display font-bold">100%</div>
-                      <div className="text-sm font-medium text-brand-100">Employabilité validée</div>
-                    </div>
-                 </div>
+                 <button className="px-8 py-4 bg-white text-blue-600 rounded-2xl font-black shadow-xl hover:scale-105 transition-all text-sm uppercase tracking-widest">
+                    Ouvrir la Salle Visio Jitsi
+                 </button>
               </div>
 
-              {/* Event List */}
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <div className="p-8 border-b border-slate-100 bg-slate-50/50">
-                   <h2 className="text-2xl font-display font-bold text-slate-900">Vos prochains Job Dating</h2>
-                   <p className="text-sm text-slate-500 mt-1">Rencontrez des candidats pré-sélectionnés (Niveau 1 & 2).</p>
+                   <h2 className="text-2xl font-display font-bold text-slate-900">Vos sessions de Job Dating</h2>
                 </div>
                 <div className="p-8">
                   {isLoading ? (
-                     <div className="py-20 text-center animate-pulse text-brand-500 font-medium">Récupération API...</div>
+                     <div className="py-20 text-center animate-pulse text-blue-500 font-bold">CHARGEMENT...</div>
                   ) : events.length === 0 ? (
-                     <div className="py-16 text-center">
-                       <h3 className="text-lg font-bold text-slate-800">Aucune session programmée</h3>
-                       <p className="text-slate-500 text-sm mt-2">Votre conseiller n'a pas encore ouvert de nouveaux créneaux.</p>
-                     </div>
+                     <div className="py-16 text-center italic text-slate-400">Aucun événement n'est encore rattaché à votre compte.</div>
                   ) : (
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {events.map(evt => (
-                          <div key={evt.id} className="border border-slate-200 rounded-2xl p-6 hover:shadow-xl hover:border-brand-300 transition-all bg-white">
-                             <div className="flex justify-between items-start mb-4">
-                               <span className="px-3 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100">Job Matching</span>
-                               <span className="text-slate-500 text-sm font-semibold">📍 {evt.region}</span>
-                             </div>
-                             <h3 className="text-xl font-bold text-slate-900 mb-2">{evt.title}</h3>
-                             <p className="text-slate-500 text-sm mb-6 line-clamp-2">{evt.description}</p>
-                             <button className="w-full py-3 bg-slate-900 text-white rounded-xl font-semibold hover:bg-brand-600 transition-colors text-sm">
-                               Accéder aux CV filtrés
+                          <div key={evt.id} className="group border border-slate-200 rounded-2xl p-6 hover:shadow-2xl hover:border-blue-300 transition-all bg-white relative">
+                             <h3 className="text-xl font-bold text-slate-900 mb-2">{evt.titre}</h3>
+                             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-6">📍 {evt.region} • 📅 {new Date(evt.date).toLocaleDateString()}</p>
+                             <button className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors text-xs uppercase tracking-widest">
+                               Gérer les créneaux
                              </button>
                           </div>
                         ))}
@@ -164,102 +187,141 @@ const RecruiterDashboard = () => {
            </section>
         )}
 
-        {/* TAB OFFERS (Dépôt d'Offres) */}
-        {activeTab === 'offers' && (
-           <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up">
-             
-             {/* Colonne Gauche : Formulaire de Dépôt */}
-             <div className="lg:col-span-1">
-                <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-8 sticky top-24">
-                  <h2 className="text-xl font-display font-bold text-slate-900 mb-6 flex items-center gap-3">
-                     <span className="text-3xl text-accent-500">📝</span> Publier une Offre
-                  </h2>
-                  <p className="text-sm text-slate-500 mb-6">Attirez les profils de niveau 1 & 2 en formatant votre offre de poste au sein de l'écosystème Numeric'Emploi.</p>
-                  
-                  <form onSubmit={handleCreateOffer} className="space-y-5">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Titre du Poste</label>
-                      <input type="text" required value={newOffer.title} onChange={e => setNewOffer({...newOffer, title: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 transition" placeholder="Ex: Développeur Full-Stack React" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Type de contrat</label>
-                      <select required value={newOffer.contract_type} onChange={e => setNewOffer({...newOffer, contract_type: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 transition">
-                        <option value="CDI">CDI</option>
-                        <option value="CDD">CDD</option>
-                        <option value="Alternance">Alternance</option>
-                        <option value="Freelance">Freelance</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Description / Missions</label>
-                      <textarea required rows="4" value={newOffer.description} onChange={e => setNewOffer({...newOffer, description: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 transition" placeholder="Détaillez les missions du candidat..."></textarea>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                       <div>
-                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Lieu</label>
-                         <input type="text" required value={newOffer.location} onChange={e => setNewOffer({...newOffer, location: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm" placeholder="Ville" />
+        {/* TAB STAND (NOUVEAUTÉ ALUMNFORCE) */}
+        {activeTab === 'stand' && (
+           <section className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+              <div className="lg:col-span-2 space-y-8">
+                 <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-10">
+                    <h2 className="text-3xl font-display font-black text-slate-900 mb-8 flex items-center gap-4">
+                       <span className="text-4xl">🏢</span> Identité du Stand
+                    </h2>
+                    <form onSubmit={handleUpdateStand} className="space-y-6">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Nom affiché</label>
+                            <input type="text" value={company.name} onChange={e => setCompany({...company, name: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Secteur d'activité</label>
+                            <input type="text" value={company.industry} onChange={e => setCompany({...company, industry: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
+                          </div>
                        </div>
                        <div>
-                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Télétravail</label>
-                         <div className="flex items-center h-12">
-                           <input type="checkbox" checked={newOffer.is_remote} onChange={e => setNewOffer({...newOffer, is_remote: e.target.checked})} className="w-5 h-5 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                           <span className="ml-2 text-sm text-slate-600">Possible</span>
-                         </div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Présentation de l'entreprise (Marketing)</label>
+                          <textarea rows="6" value={company.description} onChange={e => setCompany({...company, description: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium resize-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all" placeholder="Décrivez votre culture d'entreprise, vos valeurs..."></textarea>
+                       </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Site Web</label>
+                            <input type="text" value={company.website_url} onChange={e => setCompany({...company, website_url: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm" placeholder="https://..." />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">LinkedIn</label>
+                            <input type="text" value={company.linkedin_url} onChange={e => setCompany({...company, linkedin_url: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm" placeholder="https://linkedin.com/company/..." />
+                          </div>
+                       </div>
+                       <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Vidéo de présentation (Lien YouTube/Vimeo)</label>
+                          <input type="text" value={company.video_url} onChange={e => setCompany({...company, video_url: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm" placeholder="https://youtube.com/watch?v=..." />
+                       </div>
+                       <div className="pt-6 border-t border-slate-100 flex justify-end">
+                          <button type="submit" disabled={isSubmitting} className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest">
+                             {isSubmitting ? 'Mise à jour...' : 'Enregistrer le Stand'}
+                          </button>
+                       </div>
+                    </form>
+                 </div>
+              </div>
+              
+              <div className="lg:col-span-1 space-y-6">
+                 <div className="bg-[#0f172a] rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                    <h3 className="text-xl font-display font-black mb-6 flex items-center gap-3 italic">
+                       👀 Aperçu Stand
+                    </h3>
+                    <div className="space-y-4 text-sm">
+                       <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                          <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Visibilité</p>
+                          <p className="font-bold flex items-center gap-2">
+                             <span className="w-2 h-2 rounded-full bg-green-500"></span> Public sur le Forum
+                          </p>
+                       </div>
+                       <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                          <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Score Complétude</p>
+                          <div className="w-full bg-white/10 h-2 rounded-full mt-2">
+                             <div className="bg-blue-500 h-full rounded-full" style={{width: '85%'}}></div>
+                          </div>
                        </div>
                     </div>
-                    <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-brand-600 text-white rounded-xl font-bold shadow-lg shadow-brand-500/30 hover:scale-105 transition-all text-sm mt-4">
-                      {isSubmitting ? 'Publication en cours...' : 'Publier l\'Offre'}
+                    <button className="w-full mt-8 py-4 border border-white/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition">
+                       Voir mon stand public
                     </button>
-                  </form>
-                </div>
-             </div>
+                 </div>
+              </div>
+           </section>
+        )}
 
-             {/* Colonne Droite : Liste de mes Offres Actives */}
-             <div className="lg:col-span-2">
-                <div className="flex justify-between items-end mb-8">
-                   <div>
-                     <h2 className="text-2xl font-display font-bold text-slate-900">Vos offres diffusées</h2>
-                     <p className="text-sm text-slate-500 mt-1">Gérez le listing de tous vos recrutements actifs en ligne.</p>
-                   </div>
-                   <span className="px-4 py-1.5 bg-white shadow-sm border border-slate-200 text-brand-600 font-bold rounded-full text-sm">
-                      {offers.length} Actives
-                   </span>
-                </div>
+        {/* TAB OFFERS */}
+        {activeTab === 'offers' && (
+           <section className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-fade-in-up">
+              <div className="lg:col-span-1">
+                 <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 sticky top-32">
+                    <h2 className="text-xl font-display font-black text-slate-900 mb-6 flex items-center gap-3">
+                       <span className="text-3xl">📝</span> Publier une Offre
+                    </h2>
+                    <form onSubmit={handleCreateOffer} className="space-y-4">
+                       <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Titre du poste</label>
+                          <input type="text" required value={newOffer.title} onChange={e => setNewOffer({...newOffer, title: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-4 focus:ring-blue-500/10" placeholder="Ex: Lead Developer React" />
+                       </div>
+                       <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Type</label>
+                            <select value={newOffer.contract_type} onChange={e => setNewOffer({...newOffer, contract_type: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                               <option>CDI</option><option>CDD</option><option>Alternance</option><option>Stage</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Lieu</label>
+                            <input type="text" required value={newOffer.location} onChange={e => setNewOffer({...newOffer, location: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+                          </div>
+                       </div>
+                       <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Description</label>
+                          <textarea rows="4" required value={newOffer.description} onChange={e => setNewOffer({...newOffer, description: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm resize-none"></textarea>
+                       </div>
+                       <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-blue-600 transition-all text-[10px] uppercase tracking-widest">
+                          {isSubmitting ? 'Envoi...' : 'Diffuser l\'offre'}
+                       </button>
+                    </form>
+                 </div>
+              </div>
 
-                {isLoading ? (
-                   <div className="py-20 flex justify-center"><div className="w-10 h-10 border-4 border-slate-200 border-t-brand-600 rounded-full animate-spin"></div></div>
-                ) : offers.length === 0 ? (
-                   <div className="bg-white rounded-2xl border border-slate-200 border-dashed p-16 text-center">
-                      <div className="text-6xl mb-4 text-slate-300">📋</div>
-                      <h3 className="text-lg font-bold text-slate-800">Aucune offre publiée.</h3>
-                      <p className="text-slate-500 text-sm mt-2 max-w-sm mx-auto">Commencez par utiliser le formulaire de gauche pour déposer votre première offre d'emploi.</p>
-                   </div>
-                ) : (
-                   <div className="space-y-4">
-                      {offers.map(off => (
-                        <div key={off.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition">
-                           <div className="flex justify-between items-start mb-2">
-                              <h3 className="text-xl font-bold text-slate-900">{off.title}</h3>
-                              <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200">En cours</span>
-                           </div>
-                           <div className="flex items-center gap-3 text-sm font-medium text-slate-500 mb-4">
-                             <span className="bg-slate-100 px-2 py-1 rounded">{off.contract_type}</span>
-                             <span>•</span>
-                             <span>📍 {off.location} {off.is_remote ? '(Télétravail)' : ''}</span>
-                             <span>•</span>
-                             <span>📅 Ajoutée le {new Date(off.created_at).toLocaleDateString()}</span>
-                           </div>
-                           <p className="text-slate-600 text-sm line-clamp-2">{off.description}</p>
-                           <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
-                              <button className="text-slate-500 hover:text-slate-800 text-sm font-semibold transition">Désactiver</button>
-                              <button className="text-brand-600 hover:text-brand-800 text-sm font-semibold transition">Voir les Matchs IA</button>
-                           </div>
-                        </div>
-                      ))}
-                   </div>
-                )}
-             </div>
-
+              <div className="lg:col-span-2 space-y-6">
+                 <h2 className="text-2xl font-display font-black text-slate-900 mb-8 italic flex items-center gap-3">
+                   📋 Activité du Job Board
+                    <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full not-italic tracking-normal">{offers.length} Offres actives</span>
+                 </h2>
+                 {offers.length === 0 ? (
+                    <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-slate-200">
+                       <p className="text-slate-400 font-bold italic">Aucune offre n'est actuellement diffusée pour votre stand.</p>
+                    </div>
+                 ) : (
+                    <div className="space-y-4">
+                       {offers.map(off => (
+                          <div key={off.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition flex justify-between items-center">
+                             <div>
+                                <h3 className="font-bold text-slate-900">{off.title}</h3>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">📍 {off.location} • {off.contract_type}</p>
+                             </div>
+                             <div className="flex gap-2 text-[10px] font-black uppercase">
+                                <span className="text-blue-600 px-4 py-2 bg-blue-50 rounded-lg tracking-widest">8 Candidats</span>
+                                <button className="text-slate-400 hover:text-red-500 px-2 py-2">🗑️</button>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+                 )}
+              </div>
            </section>
         )}
 

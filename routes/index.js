@@ -19,6 +19,7 @@ module.exports = (db) => {
   const candidateCtrl = require('../controllers/candidate.controller')(db);
   const authCtrl = require('../controllers/auth.controller')(db);
   const offerCtrl = require('../controllers/job_offer.controller')(db);
+  const companyCtrl = require('../controllers/company.controller')(db);
   const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 
   // ==========================================
@@ -62,6 +63,13 @@ module.exports = (db) => {
   // ==========================================
   router.get('/offers', offerCtrl.listOffers);
   router.post('/offers', offerCtrl.createOffer);
+
+  // ==========================================
+  // ROUTES DES ENTREPRISES (STAND EXPOSANT)
+  // ==========================================
+  router.get('/companies', companyCtrl.listCompanies);
+  router.get('/companies/:id', companyCtrl.getCompany);
+  router.put('/companies/:id', companyCtrl.updateCompany);
 
   return router;
 };

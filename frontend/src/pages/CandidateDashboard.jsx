@@ -2,287 +2,270 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const CandidateDashboard = () => {
-  const [activeTab, setActiveTab] = useState('matching'); // matching | profile
+  const [activeTab, setActiveTab] = useState('matching'); // matching | profile | companies
   const [events, setEvents] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // État du profil candidat (pour le formulaire "Compléments d'infos")
+  // État du profil candidat enrichi
   const [profile, setProfile] = useState({
     cvFile: null,
     linkedin: '',
-    bio: '',
-    experience: '0'
+    bio: "Développeur Full-Stack React passionné par les architectures Cloud et l'expérience utilisateur.",
+    experience: '2-4',
+    timeline: [
+      { id: 1, title: 'Développeur Web Junior', company: 'Tech Solutions', date: '2022 - 2024' },
+      { id: 2, title: 'Formation Titre RNCP V', company: 'Digital School', date: '2021 - 2022' }
+    ]
   });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (activeTab === 'matching') {
-      fetchData();
-    }
+    fetchData();
   }, [activeTab]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/events');
-      if (res.ok) setEvents((await res.json()).events || []);
-    } catch {
-      // Ignorer pour la maquette
-    }
+      if (activeTab === 'matching') {
+        const res = await fetch('/api/events');
+        if (res.ok) {
+          const data = await res.json();
+          setEvents(data.events || []);
+        }
+      } else if (activeTab === 'companies') {
+        const res = await fetch('/api/companies');
+        if (res.ok) {
+          const data = await res.json();
+          setCompanies(data.companies || []);
+        }
+      }
+    } catch { /* Ignorer pour la démo */ }
     setIsLoading(false);
   };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    
-    // Simulation d'un upload de fichier (Multer) et sauvegarde API
     setTimeout(() => {
-      alert("✅ Profil mis à jour avec succès ! Votre CV a bien été uploadé.");
+      alert("✅ Profil mis à jour sur la plateforme !");
       setIsSaving(false);
     }, 1500);
-  };
-
-  const handleFileChange = (e) => {
-    setProfile({...profile, cvFile: e.target.files[0]});
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20">
       
-      {/* Header Premium Candidat */}
-      <header className="bg-slate-900 text-white relative overflow-hidden shadow-xl border-b border-slate-800">
-        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-600 rounded-full blur-[120px] opacity-20 -z-0"></div>
-        <div className="max-w-7xl mx-auto px-6 py-10 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center font-display font-bold text-slate-900 text-2xl hover:scale-105 transition">C</Link>
-              <div>
-                <span className="inline-block px-3 py-1 bg-slate-800 text-blue-200 rounded-full text-xs font-bold tracking-widest uppercase mb-4 shadow-inner ring-1 ring-slate-700">
-                  Espace Candidat
-                </span>
-                <h1 className="text-4xl lg:text-5xl font-display font-bold tracking-tight leading-tight">
-                  Votre carrière,<br/>
-                  <span className="text-blue-300">accélérée par l'IA.</span>
-                </h1>
+      {/* Header Premium (Identité Visuelle Dark Mode) */}
+      <header className="bg-[#0f172a] text-white relative overflow-hidden shadow-2xl border-b border-white/5">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[150px] opacity-10"></div>
+        <div className="max-w-7xl mx-auto px-6 py-12 relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-8">
+            <div className="w-20 h-20 bg-white rounded-[2rem] shadow-2xl flex items-center justify-center font-display font-black text-slate-900 text-3xl">C</div>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                 <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[10px] font-bold tracking-widest uppercase">Espace Candidat</span>
+                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic tracking-tighter">Membre #8420</span>
               </div>
+              <h1 className="text-4xl lg:text-5xl font-display font-black tracking-tighter leading-none">
+                Bonjour, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300 italic">Jean Dupont</span>
+              </h1>
             </div>
-            
-            <div className="flex items-center gap-6">
-               <div className="text-right hidden sm:block">
-                  <p className="font-semibold text-sm">Candidat Actif</p>
-                  <Link to="/" className="text-xs text-orange-400 font-bold hover:underline italic">Se déconnecter</Link>
-               </div>
-               <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-2xl flex items-center gap-5 shadow-2xl">
-                  <div className="w-12 h-12 bg-gradient-to-tr from-green-400 to-emerald-500 rounded-full flex items-center justify-center font-display font-bold text-white text-lg ring-4 ring-white/10 shadow-lg relative">
-                    100
-                  </div>
-               </div>
-            </div>
-            
+          </div>
+          
+          <div className="flex items-center gap-6">
+             <div className="text-right hidden sm:block">
+                <p className="font-bold text-sm">Disponibilité : <span className="text-green-400">Immédiate</span></p>
+                <Link to="/" className="text-xs text-slate-500 font-bold hover:text-white transition uppercase tracking-widest mt-2 block">Déconnexion</Link>
+             </div>
+             <div className="bg-white/5 border border-white/10 p-5 rounded-3xl flex items-center gap-5 backdrop-blur-xl">
+                <div className="w-12 h-12 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-lg">95</div>
+                <div>
+                   <p className="text-[10px] uppercase font-black text-slate-500 tracking-widest">Score Matching</p>
+                   <p className="text-xs font-bold text-blue-300">Profil Très Qualifié</p>
+                </div>
+             </div>
           </div>
         </div>
       </header>
 
       {/* Tabs Menu */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 flex gap-8">
-          <button onClick={() => setActiveTab('matching')} className={`py-4 font-medium text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'matching' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 flex gap-10">
+          <button onClick={() => setActiveTab('matching')} className={`py-5 font-black text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'matching' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
              🪄 Mes Matchs IA
           </button>
-          <button onClick={() => setActiveTab('profile')} className={`py-4 font-medium text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'profile' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
-             <div className="relative">
-                ⚙️ Mon Profil
-                {(!profile.cvFile || !profile.linkedin) && <span className="absolute -top-1 -right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>}
-             </div>
+          <button onClick={() => setActiveTab('companies')} className={`py-5 font-black text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'companies' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+             🏢 Explorer les Stands
+          </button>
+          <button onClick={() => setActiveTab('profile')} className={`py-5 font-black text-sm transition-all border-b-2 flex items-center gap-2 ${activeTab === 'profile' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+             ⚙️ Mon Profil
           </button>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
         
-        {/* Colonne Principale Variable (Matching OU Profil) */}
-        <div className="lg:col-span-2 space-y-8 animate-fade-in-up">
+        <div className="lg:col-span-2 space-y-10 animate-fade-in-up">
            
-           {activeTab === 'matching' ? (
-              <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-40 h-40 bg-accent-50 rounded-bl-full -z-10 blur-2xl"></div>
-                
-                <h2 className="text-2xl font-display font-bold text-slate-900 flex items-center gap-3">
-                   <span className="text-3xl text-brand-500">🪄</span> Vos Matchs
-                </h2>
-                <p className="text-sm text-slate-500 mt-2 mb-8 max-w-lg">
-                   Votre profil validé vous donne un accès exclusif aux offres de recrutement de votre région. Réservez votre créneau d'entretien Jitsi.
-                </p>
-                
-                {isLoading ? (
-                   <div className="py-20 flex justify-center"><div className="w-10 h-10 border-4 border-slate-200 border-t-brand-600 rounded-full animate-spin"></div></div>
-                ) : events.length === 0 ? (
-                   <div className="py-16 text-center bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
-                     <div className="text-6xl mb-4">🔮</div>
-                     <h3 className="text-lg font-bold text-slate-800">En attente d'offres</h3>
-                     <p className="text-slate-500 text-sm mt-2 max-w-sm mx-auto">
-                       Aucun événement de Job Matching n'est prévu dans l'immédiat pour votre région.
-                     </p>
-                   </div>
-                ) : (
-                   <div className="space-y-4">
-                     {events.map((evt, index) => (
-                        <div key={evt.id} className="border border-slate-200 rounded-2xl p-6 bg-white hover:shadow-xl hover:-translate-y-1 transition-all group relative">
-                           {index === 0 && <span className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg rotate-12 animate-pulse">NOUVEAU !!</span>}
-                           <div className="flex flex-col md:flex-row gap-6">
-                              <div className="w-full md:w-48 bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
-                                 <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-2xl mb-3">
-                                    {evt.location_type === 'visio' ? '💻' : '🏢'}
-                                 </div>
-                                 <p className="font-bold text-slate-900 text-sm">{evt.location_type === 'visio' ? 'Visio Jitsi' : 'Présentiel'}</p>
-                                 <p className="text-xs text-slate-500 mt-1">{new Date(evt.event_date).toLocaleDateString()}</p>
-                              </div>
-                              <div className="flex-1 flex flex-col justify-between">
+           {/* TAB MATCHING */}
+           {activeTab === 'matching' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-slate-100">
+                   <h2 className="text-3xl font-display font-black text-slate-900 flex items-center gap-4 mb-2">
+                      <span className="text-4xl">🪄</span> Opportunités de la semaine
+                   </h2>
+                   <p className="text-slate-500 font-medium mb-10">L'IA a sélectionné ces sessions basées sur vos compétences en React et Node.js.</p>
+                   
+                   {isLoading ? (
+                      <div className="py-20 text-center animate-pulse text-blue-500">Analyses en cours...</div>
+                   ) : events.length === 0 ? (
+                      <div className="py-16 text-center italic text-slate-400">Aucun match immédiat. Complétez votre profil pour plus de résultats.</div>
+                   ) : (
+                      <div className="space-y-6">
+                        {events.map((evt) => (
+                           <div key={evt.id} className="border border-slate-100 rounded-[2rem] p-8 bg-slate-50/50 hover:bg-white hover:shadow-2xl transition-all group border-l-8 border-l-blue-600">
+                              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                                  <div>
-                                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-brand-600 transition-colors mb-2">{evt.title}</h3>
-                                    <p className="text-slate-600 text-xs line-clamp-2 md:line-clamp-3 leading-relaxed">{evt.description}</p>
+                                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors mb-2">{evt.titre}</h3>
+                                    <div className="flex gap-6 text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                                       <span>📅 {new Date(evt.date).toLocaleDateString()}</span>
+                                       <span>📍 {evt.region}</span>
+                                       <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Match 95%</span>
+                                    </div>
                                  </div>
-                                 <button className="mt-4 md:mt-0 w-min whitespace-nowrap px-6 py-2.5 bg-gradient-to-r from-brand-600 to-brand-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-brand-500/30 hover:scale-105 transition-all">
-                                    Réserver un créneau
+                                 <button className="px-8 py-3 bg-slate-900 text-white text-xs font-black rounded-xl shadow-xl hover:bg-blue-600 transition-all uppercase tracking-widest">
+                                    Réserver mon Entretien
                                  </button>
                               </div>
                            </div>
-                        </div>
-                     ))}
-                   </div>
-                )}
+                        ))}
+                      </div>
+                   )}
+                </div>
               </div>
-           ) : (
-              /* TAB PROFIL (Import CV & Infos) */
-              <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-                 <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">Compléter votre Profil 📋</h2>
-                 <p className="text-sm text-slate-500 mb-8">Les recruteurs seront 65% plus enclins à vous sélectionner lors des Matchs si votre profil est complet. Déposez votre CV PDF.</p>
+           )}
 
-                 <form onSubmit={handleProfileUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    {/* Colonne de Gauche : Import du CV */}
-                    <div className="space-y-6">
-                       <div className="bg-slate-50 rounded-2xl p-6 border-2 border-brand-200 border-dashed text-center hover:bg-brand-50 transition cursor-pointer relative group">
-                          <input type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📄</div>
-                          <h4 className="font-bold text-slate-800 text-sm">Déposer mon CV</h4>
-                          <p className="text-xs text-slate-500 mt-1">Formats acceptés : PDF, Word (Max 5Mo)</p>
-                          {profile.cvFile && (
-                             <div className="mt-4 bg-green-100 text-green-800 text-xs font-bold py-2 rounded-lg border border-green-200">
-                               ✅ Fichier prêt : {profile.cvFile.name}
+           {/* TAB COMPANIES (EXPLORATEUR DE STANDS) */}
+           {activeTab === 'companies' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up">
+                 {isLoading ? (
+                    <div className="col-span-full py-20 text-center">Recherche des exposants...</div>
+                 ) : companies.length === 0 ? (
+                    <div className="col-span-full py-16 text-center italic text-slate-400">Aucun exposant n'a encore ouvert son stand.</div>
+                 ) : (
+                    companies.map(comp => (
+                       <div key={comp.id} className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl transition group relative overflow-hidden">
+                          <div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-0 group-hover:scale-110 transition-transform"></div>
+                          <div className="relative z-10">
+                             <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-xl font-black text-slate-900 mb-6 shadow-sm border border-slate-100">
+                                {comp.name.substring(0,2).toUpperCase()}
                              </div>
-                          )}
+                             <h3 className="text-xl font-black text-slate-900 mb-2">{comp.name}</h3>
+                             <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-4">{comp.industry}</p>
+                             <p className="text-xs text-slate-500 line-clamp-3 mb-6 leading-relaxed italic">"{comp.description}"</p>
+                             <div className="flex gap-3 pt-6 border-t border-slate-50">
+                                <button className="flex-1 py-3 bg-slate-100 text-slate-900 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-slate-200 transition">Voir le Stand</button>
+                                <button className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:scale-105 transition">Déposer CV</button>
+                             </div>
+                          </div>
                        </div>
-                       
+                    ))
+                 )}
+              </div>
+           )}
+
+           {/* TAB PROFIL ENRICHI */}
+           {activeTab === 'profile' && (
+              <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-slate-100 space-y-12">
+                 <div className="flex justify-between items-center">
+                    <h2 className="text-3xl font-display font-black text-slate-900">Mon Profil Alumn</h2>
+                    <span className="px-4 py-1.5 bg-green-50 text-green-700 text-[10px] font-black uppercase rounded-full border border-green-200 tracking-widest">En Ligne</span>
+                 </div>
+
+                 <form onSubmit={handleProfileUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-8">
+                       <div className="bg-slate-50 rounded-[2rem] p-8 border-2 border-dashed border-slate-200 text-center hover:border-blue-500 transition-colors cursor-pointer">
+                          <div className="text-5xl mb-4">📄</div>
+                          <p className="text-sm font-black text-slate-900 mb-1 italic">Remplacer mon CV</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">PDF (Dernier : cv_jean_2026.pdf)</p>
+                       </div>
                        <div>
-                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Lien Profil LinkedIn</label>
-                         <input type="url" value={profile.linkedin} onChange={e => setProfile({...profile, linkedin: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent transition" placeholder="https://linkedin.com/in/votre-profil" />
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 italic">Pitch de présentation</label>
+                          <textarea rows="4" value={profile.bio} onChange={e => setProfile({...profile, bio: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium resize-none focus:ring-4 focus:ring-blue-500/10"></textarea>
                        </div>
                     </div>
 
-                    {/* Colonne de Droite : Bio et Expérience */}
-                    <div className="space-y-6 flex flex-col">
-                       <div>
-                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Années d'Expérience IT</label>
-                         <div className="flex bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
-                           <button type="button" onClick={() => setProfile({...profile, experience: '0-1'})} className={`flex-1 py-2 text-sm font-medium ${profile.experience === '0-1' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Débutant</button>
-                           <button type="button" onClick={() => setProfile({...profile, experience: '2-4'})} className={`flex-1 py-2 text-sm font-medium border-l border-slate-200 ${profile.experience === '2-4' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>2 - 4 ans</button>
-                           <button type="button" onClick={() => setProfile({...profile, experience: '5+'})} className={`flex-1 py-2 text-sm font-medium border-l border-slate-200 ${profile.experience === '5+' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>5 ans +</button>
-                         </div>
-                       </div>
-                       <div className="flex-1 flex flex-col">
-                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Courte introduction (Bio)</label>
-                         <textarea value={profile.bio} onChange={e => setProfile({...profile, bio: e.target.value})} className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent transition flex-1 resize-none" placeholder="Ex: Développeur passionné en reconversion, j'ai récemment obtenu mon RNCP Titre V..."></textarea>
+                    <div className="space-y-8">
+                       <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                          <span className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center text-xs">⏳</span> Expériences
+                       </h3>
+                       <div className="space-y-6">
+                          {profile.timeline.map(exp => (
+                             <div key={exp.id} className="relative pl-8 border-l-2 border-slate-100">
+                                <div className="absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white"></div>
+                                <p className="text-xs font-black text-slate-900 leading-none mb-1">{exp.title}</p>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase">{exp.company} • {exp.date}</p>
+                             </div>
+                          ))}
+                          <button type="button" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">+ Ajouter une étape</button>
                        </div>
                     </div>
-                    
-                    {/* Bouton de Sauvegarde */}
-                    <div className="md:col-span-2 pt-6 border-t border-slate-100 flex justify-end">
-                       <button type="submit" disabled={isSaving || (!profile.cvFile && !profile.linkedin && !profile.bio)} className="px-8 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition-all text-sm flex gap-2 items-center disabled:opacity-50 disabled:cursor-not-allowed">
-                          {isSaving ? (
-                            <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Sauvegarde...</>
-                          ) : (
-                            '💾 Enregistrer mon Profil'
-                          )}
+
+                    <div className="md:col-span-2 pt-10 border-t border-slate-100 flex justify-end">
+                       <button type="submit" className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/30 hover:scale-105 transition-all text-xs uppercase tracking-widest">
+                          💾 Sauvegarder mon identité
                        </button>
                     </div>
-
                  </form>
               </div>
            )}
 
         </div>
-        
-        {/* Colonne Side : Profil / Mentorat */}
-        <div className="lg:col-span-1 border-l border-slate-100 lg:pl-8 space-y-6">
-           
-           <div className="bg-brand-900 rounded-3xl p-8 text-white shadow-xl shadow-brand-900/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[40px]"></div>
-              <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
-                 <span className="bg-white/20 p-2 rounded-lg text-lg">🎓</span> Parcours Initial
-              </h3>
-              
-              <ul className="space-y-4">
-                 <li className="flex gap-4 opacity-50">
-                    <div className="w-6 py-0.5 flex flex-col items-center">
-                       <div className="w-3 h-3 rounded-full bg-brand-400"></div>
-                       <div className="w-px h-full bg-brand-400 mt-1"></div>
-                    </div>
-                    <div className="pb-4">
-                       <p className="text-sm font-bold">Inscription Plateforme</p>
-                       <p className="text-xs text-brand-300">Validé en Février</p>
-                    </div>
-                 </li>
-                 <li className="flex gap-4 opacity-50">
-                    <div className="w-6 py-0.5 flex flex-col items-center">
-                       <div className="w-3 h-3 rounded-full bg-brand-400"></div>
-                       <div className="w-px h-full bg-brand-400 mt-1"></div>
-                    </div>
-                    <div className="pb-4">
-                       <p className="text-sm font-bold">Évaluation du Projet</p>
-                       <p className="text-xs text-brand-300">Score de 75/100</p>
-                    </div>
-                 </li>
-                 <li className="flex gap-4 opacity-50">
-                    <div className="w-6 py-0.5 flex flex-col items-center">
-                       <div className="w-3 h-3 rounded-full bg-brand-400"></div>
-                       <div className="w-px h-full bg-brand-400 mt-1"></div>
-                    </div>
-                    <div className="pb-4">
-                       <p className="text-sm font-bold">Analyse Employabilité</p>
-                       <p className="text-xs text-brand-300">Classé Niveau 1</p>
-                    </div>
-                 </li>
-                 <li className="flex gap-4">
-                    <div className="w-6 py-0.5 flex flex-col items-center">
-                       {(!profile.cvFile || !profile.linkedin) ? (
-                          <div className="w-4 h-4 rounded-full border-4 border-yellow-500 bg-slate-900 animate-pulse"></div>
-                       ) : (
-                          <div className="w-4 h-4 rounded-full bg-accent-500 shadow-[0_0_15px_rgba(249,115,22,0.8)]"></div>
-                       )}
-                    </div>
+
+        {/* Sidebar Status (Pure AlumnForce style) */}
+        <div className="lg:col-span-1 border-l border-slate-100 lg:pl-10 space-y-8">
+           <div className="bg-[#0f172a] rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/20 rounded-full blur-3xl"></div>
+              <h3 className="text-xl font-display font-black mb-8 italic">Votre Progression</h3>
+              <div className="space-y-6">
+                 <div className="flex gap-4 items-start">
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-[10px] shrink-0">✓</div>
                     <div>
-                       <p className="text-sm font-bold text-accent-400">Job Matching</p>
-                       <p className="text-xs text-brand-200 mt-1 leading-relaxed">
-                          {(!profile.cvFile || !profile.linkedin) 
-                            ? "Action Requise : Allez dans l'onglet 'Mon Profil' en haut pour rattacher votre CV et vous rendre visible des recruteurs."
-                            : "Profil complet ! Vos compétences sont désormais analysées pour le matching IA avec les Datings locaux."}
-                       </p>
+                       <p className="text-xs font-black">Identité validée</p>
+                       <p className="text-[10px] text-slate-500">Parcours OPCO ATLAS</p>
                     </div>
-                 </li>
-              </ul>
-           </div>
-           
-           <div className="bg-white rounded-2xl border border-slate-200 p-6 flex items-start gap-4">
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-xl shrink-0">✉️</div>
-              <div>
-                 <h4 className="font-bold text-slate-900 text-sm">Contacter mon conseiller</h4>
-                 <p className="text-xs text-slate-500 mt-1 mb-3 leading-relaxed">Questions sur l'import de votre CV ?</p>
-                 <a href="mailto:contact@opco-atlas.fr" className="text-xs font-bold text-brand-600 hover:text-brand-800 underline">Envoyer un message</a>
+                 </div>
+                 <div className="flex gap-4 items-start">
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-[10px] shrink-0">✓</div>
+                    <div>
+                       <p className="text-xs font-black">Score Employabilité</p>
+                       <p className="text-[10px] text-slate-500">Niveau 2 (Confirmé)</p>
+                    </div>
+                 </div>
+                 <div className="flex gap-4 items-start">
+                    <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] shrink-0 animate-pulse">!</div>
+                    <div>
+                       <p className="text-xs font-black text-blue-400 underline italic">Stand Exposants ouverts</p>
+                       <p className="text-[10px] text-slate-500">Explorez les opportunités de la région.</p>
+                    </div>
+                 </div>
+              </div>
+              <div className="mt-10 pt-10 border-t border-white/5">
+                 <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest leading-loose">
+                    Opéré par Numeric'Emploi <br/> Plateforme Souveraine v2.0
+                 </p>
               </div>
            </div>
            
+           <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex items-start gap-4 hover:shadow-md transition cursor-pointer group">
+              <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform italic">🎓</div>
+              <div>
+                 <h4 className="font-black text-slate-900 text-sm italic">Mon Mentorat</h4>
+                 <p className="text-[10px] text-slate-500 mt-1 font-bold">Aucun mentor rattaché.</p>
+                 <button className="text-[9px] font-black text-blue-600 uppercase tracking-widest mt-4 hover:underline">Faire une demande →</button>
+              </div>
+           </div>
         </div>
         
       </main>

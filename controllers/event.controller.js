@@ -12,13 +12,13 @@ module.exports = (db) => {
      * @desc Créer un nouvel événement (Conseiller/Admin)
      */
     async createEvent(req, res) {
-      const { titre, date, region, max_participants } = req.body;
+      const { titre, date, region, max_participants, event_format, interview_duration, description } = req.body;
       try {
         const query = `
-          INSERT INTO job_matching_events (titre, date, region, max_participants, statut)
-          VALUES ($1, $2, $3, $4, 'brouillon') RETURNING *
+          INSERT INTO job_matching_events (titre, date, region, max_participants, event_format, interview_duration, description, statut)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'brouillon') RETURNING *
         `;
-        const { rows } = await db.query(query, [titre, date, region, max_participants]);
+        const { rows } = await db.query(query, [titre, date, region, max_participants, event_format || 'virtuel', interview_duration || 20, description]);
         res.status(201).json({ success: true, event: rows[0] });
       } catch (err) {
         res.status(500).json({ error: err.message });

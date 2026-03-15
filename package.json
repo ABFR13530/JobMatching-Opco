@@ -4,7 +4,8 @@
   "description": "Module Job Matching Autonome & Interopérable",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node migrate.js && node server.js",
+    "migrate": "node migrate.js",
     "dev": "nodemon server.js",
     "build": "cd frontend && npm install && npm run build",
     "test": "jest"
