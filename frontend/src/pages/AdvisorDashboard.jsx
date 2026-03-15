@@ -12,6 +12,8 @@ const AdvisorDashboard = () => {
   const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const userRegion = localStorage.getItem('user_region') || 'Île-de-France';
+
   const handleExportCSV = () => {
     if (candidates.length === 0) return alert("Aucun candidat à exporter.");
     const headers = "Nom,Prenom,Email,Region,Employabilit\u00E9\n";
@@ -28,9 +30,18 @@ const AdvisorDashboard = () => {
   };
 
   const [newEvent, setNewEvent] = useState({ 
-    titre: '', date: '', region: 'Île-de-France', 
-    max_participants: 100, event_format: 'virtuel', 
-    interview_duration: 20, description: '' 
+    titre: '', 
+    date: '', 
+    date_fin: '',
+    heure_debut: '09:00',
+    heure_fin: '18:00',
+    pause_debut: '12:30',
+    pause_fin: '13:30',
+    region: userRegion, 
+    max_participants: 100, 
+    event_format: 'virtuel', 
+    interview_duration: 20, 
+    description: '' 
   });
 
   const [newCandidate, setNewCandidate] = useState({
@@ -91,11 +102,20 @@ const AdvisorDashboard = () => {
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEvent)
+        body: JSON.stringify({
+           ...newEvent,
+           counselor_region: userRegion
+        })
       });
       if (res.ok) {
         alert("✅ Événement créé et ajouté au calendrier global !");
-        setNewEvent({ titre: '', date: '', region: 'Île-de-France', max_participants: 100, event_format: 'virtuel', interview_duration: 20, description: '' });
+        setNewEvent({ 
+           titre: '', date: '', date_fin: '', 
+           heure_debut: '09:00', heure_fin: '18:00',
+           pause_debut: '12:30', pause_fin: '13:30',
+           region: userRegion, max_participants: 100, 
+           event_format: 'virtuel', interview_duration: 20, description: '' 
+        });
         fetchEvents();
       } else {
         const error = await res.json();
@@ -140,14 +160,28 @@ const AdvisorDashboard = () => {
   };
 
   if (showPicker) {
+     const regions = ["Île-de-France", "Auvergne-Rhône-Alpes", "Provence-Alpes-Côte d'Azur", "Hauts-de-France", "Nouvelle-Aquitaine", "Occitanie", "Grand Est", "Bretagne", "Pays de la Loire", "Normandie", "Bourgogne-Franche-Comté", "Centre-Val de Loire", "Corse"];
      return (
         <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6">
            <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl animate-fadeIn">
               <div className="text-6xl mb-8">🛡️</div>
-              <h2 className="text-3xl font-display font-black text-slate-900 mb-4 italic">Accès Sécurisé</h2>
-              <p className="text-slate-500 text-sm mb-10 leading-relaxed font-medium">Veuillez confirmer votre identité pour accéder au pilotage Numeric'Emploi.</p>
-              <div className="space-y-4">
-                 <button onClick={() => { localStorage.setItem('user_role', 'advisor'); localStorage.setItem('user_name', 'Conseiller Atlas'); setShowPicker(false); }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:scale-105 transition-all text-[10px] uppercase tracking-widest">Entrer sur le Dashboard</button>
+              <h2 className="text-3xl font-display font-black text-slate-900 mb-4 italic">Pilotage Atlas</h2>
+              <p className="text-slate-500 text-sm mb-10 leading-relaxed font-medium">Choisissez votre région de rattachement pour accéder au pilotage.</p>
+              
+              <div className="space-y-6">
+                 <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-left">Ma Région</label>
+                    <select id="login-region" className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
+                       {regions.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                 </div>
+                 <button onClick={() => { 
+                    const reg = document.getElementById('login-region').value;
+                    localStorage.setItem('user_role', 'advisor'); 
+                    localStorage.setItem('user_name', 'Conseiller Atlas'); 
+                    localStorage.setItem('user_region', reg);
+                    setShowPicker(false); 
+                 }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:scale-105 transition-all text-[10px] uppercase tracking-widest">Se Connecter au Dashboard</button>
                  <Link to="/" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600">Retour à l'accueil</Link>
               </div>
            </div>
@@ -163,7 +197,7 @@ const AdvisorDashboard = () => {
           <div className="flex items-center gap-6">
             <Link to="/" className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center font-display font-black text-slate-900 text-3xl shadow-xl hover:scale-110 transition-transform">N</Link>
             <div>
-              <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[10px] font-black tracking-widest uppercase mb-1">Moniteur de Forum</span>
+              <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[10px] font-black tracking-widest uppercase mb-1">Moniteur de Forum • {userRegion}</span>
               <h1 className="text-3xl font-display font-black tracking-tighter leading-none italic">Direction {localStorage.getItem('user_name')}</h1>
             </div>
           </div>
@@ -192,37 +226,69 @@ const AdvisorDashboard = () => {
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nom de l'édition</label>
                     <input type="text" required value={newEvent.titre} onChange={e => setNewEvent({...newEvent, titre: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-500/10" placeholder="Ex: Forum Jobs Numériques 2026" />
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Date du forum</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Début</label>
                         <input type="date" required value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
                      </div>
                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Région</label>
-                        <select value={newEvent.region} onChange={e => setNewEvent({...newEvent, region: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
-                           <option>Île-de-France</option>
-                           <option>Auvergne-Rhône-Alpes</option>
-                           <option>Provence-Alpes-Côte d'Azur</option>
-                           <option>Hauts-de-France</option>
-                           <option>Nouvelle-Aquitaine</option>
-                           <option>Occitanie</option>
-                           <option>Grand Est</option>
-                           <option>Bretagne</option>
-                           <option>Pays de la Loire</option>
-                           <option>Normandie</option>
-                           <option>Bourgogne-Franche-Comté</option>
-                           <option>Centre-Val de Loire</option>
-                           <option>Corse</option>
-                        </select>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Fin (Optionnel)</label>
+                        <input type="date" value={newEvent.date_fin} onChange={e => setNewEvent({...newEvent, date_fin: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
                      </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Heure Début</label>
+                        <input type="time" required value={newEvent.heure_debut} onChange={e => setNewEvent({...newEvent, heure_debut: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Heure Fin</label>
+                        <input type="time" required value={newEvent.heure_fin} onChange={e => setNewEvent({...newEvent, heure_fin: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Début Pause</label>
+                        <input type="time" value={newEvent.pause_debut} onChange={e => setNewEvent({...newEvent, pause_debut: e.target.value})} className="w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-xs font-medium" />
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Fin Pause</label>
+                        <input type="time" value={newEvent.pause_fin} onChange={e => setNewEvent({...newEvent, pause_fin: e.target.value})} className="w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-xs font-medium" />
+                     </div>
+                  </div>
+
+                  <div>
+                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Région du forum</label>
+                     <select value={newEvent.region} onChange={e => setNewEvent({...newEvent, region: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
+                        <option>Île-de-France</option>
+                        <option>Auvergne-Rhône-Alpes</option>
+                        <option>Provence-Alpes-Côte d'Azur</option>
+                        <option>Hauts-de-France</option>
+                        <option>Nouvelle-Aquitaine</option>
+                        <option>Occitanie</option>
+                        <option>Grand Est</option>
+                        <option>Bretagne</option>
+                        <option>Pays de la Loire</option>
+                        <option>Normandie</option>
+                        <option>Bourgogne-Franche-Comté</option>
+                        <option>Centre-Val de Loire</option>
+                        <option>Corse</option>
+                     </select>
+                     {newEvent.event_format !== 'virtuel' && newEvent.region !== userRegion && (
+                        <p className="mt-2 text-[10px] font-bold text-red-500 italic">⚠️ Vos droits régionaux ne permettent pas de créer en dehors de {userRegion}.</p>
+                     )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                      <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Format</label>
                         <select value={newEvent.event_format} onChange={e => setNewEvent({...newEvent, event_format: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
-                           <option value="virtuel">100% Virtuel</option>
-                           <option value="hybride">Hybride</option>
-                           <option value="presentiel">Présentiel</option>
+                           <option value="virtuel">100% Virtuel (National)</option>
+                           <option value="hybride">Hybride (Régional)</option>
+                           <option value="presentiel">Présentiel (Régional)</option>
                         </select>
                      </div>
                      <div>
@@ -258,7 +324,8 @@ const AdvisorDashboard = () => {
                         <div key={evt.id} className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl hover:border-blue-500 transition-all group relative overflow-hidden">
                            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-bl-[3rem] group-hover:bg-blue-50 transition-colors"></div>
                            <h3 className="text-xl font-bold text-slate-900 mb-2 relative z-10">{evt.titre}</h3>
-                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6 italic">📍 {evt.region} • {new Date(evt.date).toLocaleDateString()}</p>
+                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 italic">📍 {evt.region} • {new Date(evt.date).toLocaleDateString()}</p>
+                           <p className="text-[9px] font-bold text-slate-400 uppercase mb-6 tracking-widest">🕒 {evt.heure_debut} - {evt.heure_fin}</p>
                            <div className="flex justify-between items-end mt-4">
                               <span className="px-4 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg">{evt.event_format}</span>
                               <button className="text-[10px] font-black text-slate-900 uppercase tracking-widest hover:underline">Détails Pilote →</button>

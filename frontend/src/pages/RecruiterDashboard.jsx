@@ -15,12 +15,13 @@ const RecruiterDashboard = () => {
     linkedin_url: '',
     video_url: '',
     industry: 'Services Numériques',
-    size: 'Grande Entreprise'
+    size: 'Grande Entreprise',
+    region: 'Île-de-France' // Région de rattachement par défaut pour la démo
   });
   const [notifications, setNotifications] = useState([]);
   const [bookings, setBookings] = useState([]); // RDV confirmés
   const [showSlotGen, setShowSlotGen] = useState(false);
-  const [slotFormData, setSlotFormData] = useState({ event_id: '', count: 10, start_time: '2026-06-15T09:00', duration: 20 });
+  const [slotFormData, setSlotFormData] = useState({ event_id: '', count: 10, start_time: '', duration: 20 });
   const [showNotifs, setShowNotifs] = useState(false);
   const [showStandPreview, setShowStandPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +49,7 @@ const RecruiterDashboard = () => {
     setIsLoading(true);
     try {
       if (activeTab === 'events') {
-        const res = await fetch('/api/events');
+        const res = await fetch(`/api/events?role=recruiter&region=${company.region}`);
         if (res.ok) {
           const data = await res.json();
           setEvents(data.events || []);
@@ -102,6 +103,23 @@ const RecruiterDashboard = () => {
       }
     } catch (e) { alert("Erreur réseau"); }
     setIsSubmitting(false);
+  };
+
+  // Au changement d'événement dans le modal de slots, on pré-remplit la date et l'heure
+  const handleEventSelection = (eventId) => {
+     const selectedEvt = events.find(e => e.id === parseInt(eventId));
+     if (selectedEvt) {
+        // Formatage pour input datetime-local: YYYY-MM-DDTHH:mm
+        const dateStr = selectedEvt.date.split('T')[0];
+        const timeStr = selectedEvt.heure_debut ? selectedEvt.heure_debut.substring(0,5) : "09:00";
+        setSlotFormData({
+           ...slotFormData,
+           event_id: eventId,
+           start_time: `${dateStr}T${timeStr}`
+        });
+     } else {
+        setSlotFormData({ ...slotFormData, event_id: eventId });
+     }
   };
 
   const handleGenerateSlots = async (e) => {
@@ -175,7 +193,7 @@ const RecruiterDashboard = () => {
               </Link>
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                   <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[10px] font-bold tracking-widest uppercase">Espace Exposant</span>
+                   <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[10px] font-bold tracking-widest uppercase">Espace Exposant • {company.region}</span>
                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">En Ligne</span>
                 </div>
@@ -256,7 +274,7 @@ const RecruiterDashboard = () => {
                  <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                  <div className="relative z-10 text-center md:text-left">
                     <h2 className="text-3xl font-display font-black mb-2 italic">Prochain Rendez-vous !</h2>
-                    <p className="text-blue-100 font-medium">Job Matching Régional - Paris 2026</p>
+                    <p className="text-blue-100 font-medium">Job Matching Régional - {company.region} 2026</p>
                     <div className="mt-6 flex gap-4 justify-center md:justify-start">
                        <div className="bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
                           <span className="block text-2xl font-black">{events.length}</span>
@@ -271,21 +289,21 @@ const RecruiterDashboard = () => {
 
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                   <h2 className="text-2xl font-display font-bold text-slate-900">Vos sessions de Job Dating</h2>
+                   <h2 className="text-2xl font-display font-bold text-slate-900">Vos sessions de Job Dating (Secteur {company.region})</h2>
                    <button onClick={() => setShowSlotGen(true)} className="px-6 py-3 bg-numeric-orange text-white rounded-xl text-[10px] font-black uppercase tracking-widest">+ Publier Disponibilités</button>
                 </div>
                 <div className="p-8">
                   {isLoading ? (
                      <div className="py-20 text-center animate-pulse text-blue-500 font-bold">CHARGEMENT...</div>
                   ) : events.length === 0 ? (
-                     <div className="py-16 text-center italic text-slate-400">Aucun événement n'est encore rattaché à votre compte.</div>
+                     <div className="py-16 text-center italic text-slate-400">Aucun événement n'est encore programmé pour la région {company.region}.</div>
                   ) : (
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {events.map(evt => (
                           <div key={evt.id} className="group border border-slate-200 rounded-2xl p-6 hover:shadow-2xl hover:border-blue-300 transition-all bg-white relative">
                              <h3 className="text-xl font-bold text-slate-900 mb-2">{evt.titre}</h3>
                              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-6">📍 {evt.region} • 📅 {new Date(evt.date).toLocaleDateString()}</p>
-                             <button onClick={() => { setSlotFormData({...slotFormData, event_id: evt.id}); setShowSlotGen(true); }} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-numeric-blue transition-colors text-xs uppercase tracking-widest">
+                             <button onClick={() => { handleEventSelection(evt.id); setShowSlotGen(true); }} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-numeric-blue transition-colors text-xs uppercase tracking-widest">
                                 Gérer les créneaux
                              </button>
                           </div>
@@ -304,7 +322,7 @@ const RecruiterDashboard = () => {
                        <form onSubmit={handleGenerateSlots} className="space-y-6">
                           <div>
                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Choisir l'Événement</label>
-                             <select className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.event_id} onChange={e => setSlotFormData({...slotFormData, event_id: e.target.value})}>
+                             <select className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.event_id} onChange={e => handleEventSelection(e.target.value)}>
                                 <option value="">-- Sélectionner un forum --</option>
                                 {events.map(evt => (
                                    <option key={evt.id} value={evt.id}>{evt.titre} ({evt.region})</option>
