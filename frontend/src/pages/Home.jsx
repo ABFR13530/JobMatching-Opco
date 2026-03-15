@@ -113,9 +113,9 @@ const Home = () => {
             <p className="text-xs text-slate-500 italic max-w-xs">Hébergement 100% Souverain sur infrastructure Française conforme RGPD.</p>
          </div>
          <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-600">
-            <a href="#" className="hover:text-white transition">CGU</a>
-            <a href="#" className="hover:text-white transition">RGPD</a>
-            <a href="#" className="hover:text-white transition">Contact</a>
+            <Link to="/legal/cgu" className="hover:text-white transition">CGU</Link>
+            <Link to="/legal/rgpd" className="hover:text-white transition">RGPD</Link>
+            <a href="mailto:contact@numeric-emploi.fr" className="hover:text-white transition">Contact</a>
          </div>
          <div className="w-32 h-10 grayscale opacity-20 filter invert brightness-200 contrast-150">
             {/* Logo Opco Atlas (Placeholder text) */}

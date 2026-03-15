@@ -17,6 +17,11 @@ const RecruiterDashboard = () => {
     industry: 'Services Numériques',
     size: 'Grande Entreprise'
   });
+  const [notifications, setNotifications] = useState([]);
+  const [bookings, setBookings] = useState([]); // RDV confirmés
+  const [showSlotGen, setShowSlotGen] = useState(false);
+  const [slotFormData, setSlotFormData] = useState({ event_id: '', count: 10, start_time: '2026-06-15T09:00', duration: 20 });
+  const [showNotifs, setShowNotifs] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Formulaire d'offre
@@ -25,7 +30,18 @@ const RecruiterDashboard = () => {
 
   useEffect(() => {
     fetchData();
+    fetchNotifications();
   }, [activeTab]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch(`/api/notifications?role=recruiter&userId=${company.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+      }
+    } catch {}
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -87,6 +103,58 @@ const RecruiterDashboard = () => {
     setIsSubmitting(false);
   };
 
+  const handleGenerateSlots = async (e) => {
+     e.preventDefault();
+     setIsSubmitting(true);
+     try {
+        const res = await fetch(`/api/events/${slotFormData.event_id}/slots`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+              recruiter_id: company.id,
+              start_time: slotFormData.start_time,
+              count: parseInt(slotFormData.count),
+              duration: parseInt(slotFormData.duration)
+           })
+        });
+        if (res.ok) {
+           alert("✅ Votre agenda a été généré ! Les candidats peuvent désormais réserver ces créneaux.");
+           setShowSlotGen(false);
+           fetchData();
+        }
+     } catch { alert("Erreur réseau"); }
+     setIsSubmitting(false);
+  };
+
+  const handleDeleteOffer = async (offerId) => {
+    if (window.confirm("Supprimer cette offre d'emploi ?")) {
+       try {
+          const res = await fetch(`/api/offers/${offerId}`, { method: 'DELETE' });
+          if (res.ok) {
+             alert("✅ Offre supprimée.");
+             fetchData();
+          }
+       } catch { alert("Erreur réseau"); }
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm("⚠️ RGPD : Supprimer votre compte entreprise supprimera également toutes vos offres et votre stand virtuel définitivement. Confirmer ?")) {
+      try {
+        const res = await fetch('/api/auth/me', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: company.id, role: 'recruiter' })
+        });
+        if (res.ok) {
+          alert("✅ Compte entreprise et données effacés.");
+          localStorage.clear();
+          window.location.href = '/';
+        }
+      } catch (e) { alert("Erreur réseau"); }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20">
       
@@ -111,13 +179,48 @@ const RecruiterDashboard = () => {
               </div>
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                 <button onClick={() => setShowNotifs(!showNotifs)} className="relative w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all">
+                    <span className="text-xl">🔔</span>
+                    {notifications.filter(n => !n.is_read).length > 0 && (
+                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-numeric-orange text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#0f172a]">
+                          {notifications.filter(n => !n.is_read).length}
+                       </span>
+                    )}
+                 </button>
+                 
+                 {showNotifs && (
+                    <div className="absolute right-0 mt-4 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-50 animate-fadeIn text-slate-900 text-left">
+                       <div className="p-5 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center text-slate-900">
+                          <span className="text-[10px] font-black uppercase tracking-widest ">Notifications Business</span>
+                          <button onClick={() => setShowNotifs(false)} className="text-slate-400 hover:text-slate-600 font-bold">×</button>
+                       </div>
+                       <div className="max-h-96 overflow-y-auto">
+                          {notifications.length === 0 ? (
+                             <p className="p-8 text-center text-xs text-slate-400 italic">Aucune alerte pour votre établissement.</p>
+                          ) : (
+                             notifications.map(n => (
+                                <div key={n.id} className={`p-5 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition cursor-pointer ${!n.is_read ? 'bg-blue-50/30' : ''}`}>
+                                   <p className="text-xs font-black  mb-1 uppercase">{n.title}</p>
+                                   <p className="text-[10px] text-slate-500 leading-relaxed font-medium italic">"{n.message}"</p>
+                                   <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase">{new Date(n.created_at).toLocaleDateString()}</p>
+                                </div>
+                             ))
+                          )}
+                       </div>
+                    </div>
+                 )}
+              </div>
+              
+              <div className="flex gap-4">
               <button 
                 onClick={() => { localStorage.clear(); window.location.href = '/'; }}
                 className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-bold transition-all backdrop-blur-md"
               >
                 Déconnexion
               </button>
+            </div>
             </div>
           </div>
         </div>
@@ -150,19 +253,20 @@ const RecruiterDashboard = () => {
                     <p className="text-blue-100 font-medium">Job Matching Régional - Paris 2026</p>
                     <div className="mt-6 flex gap-4 justify-center md:justify-start">
                        <div className="bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-                          <span className="block text-2xl font-black">12</span>
-                          <span className="text-[10px] uppercase font-bold text-blue-200">Entretiens</span>
+                          <span className="block text-2xl font-black">{events.length}</span>
+                          <span className="text-[10px] uppercase font-bold text-blue-200">Foras</span>
                        </div>
                     </div>
                  </div>
-                 <button className="px-8 py-4 bg-white text-blue-600 rounded-2xl font-black shadow-xl hover:scale-105 transition-all text-sm uppercase tracking-widest">
-                    Ouvrir la Salle Visio Jitsi
+                 <button onClick={() => window.open('https://meet.jit.si/numericEmploi_recruiter_general', '_blank')} className="px-8 py-4 bg-white text-blue-600 rounded-2xl font-black shadow-xl hover:scale-105 transition-all text-sm uppercase tracking-widest">
+                    Ouvrir mon stand Visio
                  </button>
               </div>
 
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+                <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                    <h2 className="text-2xl font-display font-bold text-slate-900">Vos sessions de Job Dating</h2>
+                   <button onClick={() => setShowSlotGen(true)} className="px-6 py-3 bg-numeric-orange text-white rounded-xl text-[10px] font-black uppercase tracking-widest">+ Publier Disponibilités</button>
                 </div>
                 <div className="p-8">
                   {isLoading ? (
@@ -175,7 +279,7 @@ const RecruiterDashboard = () => {
                           <div key={evt.id} className="group border border-slate-200 rounded-2xl p-6 hover:shadow-2xl hover:border-blue-300 transition-all bg-white relative">
                              <h3 className="text-xl font-bold text-slate-900 mb-2">{evt.titre}</h3>
                              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-6">📍 {evt.region} • 📅 {new Date(evt.date).toLocaleDateString()}</p>
-                             <button className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors text-xs uppercase tracking-widest">
+                             <button onClick={() => { setSlotFormData({...slotFormData, event_id: evt.id}); setShowSlotGen(true); }} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-numeric-blue transition-colors text-xs uppercase tracking-widest">
                                Gérer les créneaux
                              </button>
                           </div>
@@ -184,6 +288,35 @@ const RecruiterDashboard = () => {
                   )}
                 </div>
               </div>
+
+              {/* MODAL GENERATION SLOTS */}
+              {showSlotGen && (
+                 <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
+                    <div className="bg-white rounded-[3rem] p-12 max-w-xl w-full shadow-2xl relative text-slate-900">
+                       <button onClick={() => setShowSlotGen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 text-2xl font-black">×</button>
+                       <h2 className="text-3xl font-display font-black mb-8 italic">Générer mon Agenda</h2>
+                       <form onSubmit={handleGenerateSlots} className="space-y-6">
+                          <div>
+                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Début de disponibilité</label>
+                             <input type="datetime-local" className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.start_time} onChange={e => setSlotFormData({...slotFormData, start_time: e.target.value})} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-6">
+                             <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nombre d'entretiens</label>
+                                <input type="number" className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.count} onChange={e => setSlotFormData({...slotFormData, count: e.target.value})} />
+                             </div>
+                             <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Durée (min)</label>
+                                <input type="number" className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" value={slotFormData.duration} onChange={e => setSlotFormData({...slotFormData, duration: e.target.value})} />
+                             </div>
+                          </div>
+                          <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-numeric-blue text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:scale-105 transition-all text-[10px] uppercase tracking-widest">
+                             {isSubmitting ? 'Génération...' : 'Publier mes Slots'}
+                          </button>
+                       </form>
+                    </div>
+                 </div>
+              )}
            </section>
         )}
 
@@ -224,8 +357,11 @@ const RecruiterDashboard = () => {
                           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Vidéo de présentation (Lien YouTube/Vimeo)</label>
                           <input type="text" value={company.video_url} onChange={e => setCompany({...company, video_url: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm" placeholder="https://youtube.com/watch?v=..." />
                        </div>
-                       <div className="pt-6 border-t border-slate-100 flex justify-end">
-                          <button type="submit" disabled={isSubmitting} className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest">
+                       <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
+                          <button type="button" onClick={handleDeleteAccount} className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">
+                             🗑️ Supprimer le compte et le stand
+                          </button>
+                          <button type="submit" disabled={isSubmitting} className="px-10 py-4 bg-numeric-blue text-white rounded-2xl font-black shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest">
                              {isSubmitting ? 'Mise à jour...' : 'Enregistrer le Stand'}
                           </button>
                        </div>
@@ -315,7 +451,7 @@ const RecruiterDashboard = () => {
                              </div>
                              <div className="flex gap-2 text-[10px] font-black uppercase">
                                 <span className="text-blue-600 px-4 py-2 bg-blue-50 rounded-lg tracking-widest">8 Candidats</span>
-                                <button className="text-slate-400 hover:text-red-500 px-2 py-2">🗑️</button>
+                                <button onClick={() => handleDeleteOffer(off.id)} className="text-slate-400 hover:text-red-500 px-2 py-2">🗑️</button>
                              </div>
                           </div>
                        ))}

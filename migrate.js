@@ -16,7 +16,9 @@ async function runMigrations() {
     '002_collaborators_schema.sql',
     '003_job_offers_cv_schema.sql',
     '004_companies_stand_schema.sql',
-    '005_events_advanced_schema.sql'
+    '005_events_advanced_schema.sql',
+    '006_notifications_schema.sql',
+    '007_job_applications_schema.sql'
   ];
 
   for (const file of migrationFiles) {

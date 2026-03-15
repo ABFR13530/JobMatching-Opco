@@ -9,6 +9,8 @@ import RecruiterDashboard from './pages/RecruiterDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import CandidateRegistration from './pages/CandidateRegistration';
 import RecruiterRegistration from './pages/RecruiterRegistration';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 function App() {
   return (
@@ -20,6 +22,10 @@ function App() {
         {/* Pages Publiques (Standalone) */}
         <Route path="/register-candidat" element={<CandidateRegistration />} />
         <Route path="/register-recruteur" element={<RecruiterRegistration />} />
+        
+        {/* Pages Légales */}
+        <Route path="/legal/cgu" element={<TermsOfService />} />
+        <Route path="/legal/rgpd" element={<PrivacyPolicy />} />
         
         {/* Les Accès aux Dashboards connectés */}
         <Route path="/connexion/interne" element={<AdvisorDashboard />} />

@@ -64,6 +64,34 @@ module.exports = (db) => {
       } catch (err) {
         res.status(500).json({ error: err.message });
       }
+    },
+
+    /**
+     * @route GET /api/companies/all
+     * @desc Liste toutes les entreprises (pour le pilotage conseiller/admin)
+     */
+    async listAllCompanies(req, res) {
+      try {
+        const { rows } = await db.query('SELECT * FROM companies ORDER BY is_validated ASC, name ASC');
+        res.status(200).json({ success: true, companies: rows });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+
+    /**
+     * @route PATCH /api/companies/:id/validate
+     * @desc Valide le stand d'une entreprise
+     */
+    async validateCompany(req, res) {
+      const { id } = req.params;
+      try {
+        const { rows } = await db.query('UPDATE companies SET is_validated = true WHERE id = $1 RETURNING *', [id]);
+        if (rows.length === 0) return res.status(404).json({ error: "Entreprise introuvable" });
+        res.status(200).json({ success: true, company: rows[0] });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
     }
   };
 };

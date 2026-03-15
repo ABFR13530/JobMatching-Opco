@@ -5,11 +5,27 @@ const AdvisorDashboard = () => {
   const navigate = useNavigate();
   const [showPicker, setShowPicker] = useState(!localStorage.getItem('user_role'));
   const [activeTab, setActiveTab] = useState('events'); // events | candidates | companies
+  const [showCandidateForm, setShowCandidateForm] = useState(false);
 
   const [events, setEvents] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleExportCSV = () => {
+    if (candidates.length === 0) return alert("Aucun candidat à exporter.");
+    const headers = "Nom,Prenom,Email,Region,Employabilit\u00E9\n";
+    const csvContent = candidates.map(c => `${c.nom},${c.prenom},${c.email},${c.region},Niveau ${c.niveau_employabilite}`).join("\n");
+    const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `export_candidats_atlas_${new Date().toLocaleDateString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Formulaire Nouvel Événement (Enrichi)
   const [newEvent, setNewEvent] = useState({ 
@@ -17,6 +33,13 @@ const AdvisorDashboard = () => {
     max_participants: 100, event_format: 'virtuel', 
     interview_duration: 20, description: '' 
   });
+
+  // Formulaire Nouveau Candidat (Saisie manuelle conseiller)
+  const [newCandidate, setNewCandidate] = useState({
+    nom: '', prenom: '', email: '', region: 'Île-de-France',
+    niveau_employabilite: 1
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchEvents = async () => {
@@ -46,13 +69,23 @@ const AdvisorDashboard = () => {
   const fetchCompanies = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/companies');
+      const res = await fetch('/api/companies/all');
       if (res.ok) {
         const data = await res.json();
         setCompanies(data.companies || []);
       }
     } catch (e) { console.error(e); }
     setIsLoading(false);
+  };
+
+  const handleValidateCompany = async (compId) => {
+    try {
+      const res = await fetch(`/api/companies/${compId}/validate`, { method: 'PATCH' });
+      if (res.ok) {
+        alert("✅ Stand validé et désormais visible par les candidats !");
+        fetchCompanies();
+      }
+    } catch { alert("Erreur réseau"); }
   };
 
   useEffect(() => {
@@ -76,6 +109,27 @@ const AdvisorDashboard = () => {
         alert("✅ Événement créé et ajouté au calendrier global !");
         setNewEvent({ titre: '', date: '', region: 'Île-de-France', max_participants: 100, event_format: 'virtuel', interview_duration: 20, description: '' });
         fetchEvents();
+      }
+    } catch (e) { alert("Erreur réseau"); }
+    setIsSubmitting(false);
+  };
+
+  const handleCreateCandidate = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/candidates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCandidate)
+      });
+      if (res.ok) {
+        alert("✅ Candidat enregistré avec succès dans la CVthèque !");
+        setNewCandidate({ nom: '', prenom: '', email: '', region: 'Île-de-France', niveau_employabilite: 1 });
+        fetchCandidates();
+      } else {
+        const err = await res.json();
+        alert(`❌ Erreur: ${err.error}`);
       }
     } catch (e) { alert("Erreur réseau"); }
     setIsSubmitting(false);
@@ -226,7 +280,7 @@ const AdvisorDashboard = () => {
                      <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-6">{comp.industry}</p>
                      <p className="text-xs text-slate-500 line-clamp-3 mb-8 italic">"{comp.description}"</p>
                      {!comp.is_validated && (
-                        <button className="w-full py-4 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition">Valider le Stand</button>
+                        <button onClick={() => handleValidateCompany(comp.id)} className="w-full py-4 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition">Valider le Stand</button>
                      )}
                      <button className="w-full mt-3 py-4 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition">Consulter Dossier</button>
                   </div>
@@ -240,8 +294,51 @@ const AdvisorDashboard = () => {
           <div className="animate-fade-in-up">
              <div className="flex justify-between items-end mb-10">
                 <h2 className="text-4xl font-display font-black text-slate-900 italic">CVthèque Forum</h2>
-                <button className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-600 transition">Exporter la Qualif CSV</button>
+                <div className="flex gap-4">
+                  <button onClick={handleExportCSV} className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition">Exporter la Qualif CSV</button>
+                  <button onClick={() => setShowCandidateForm(!showCandidateForm)} className="px-8 py-4 bg-numeric-orange text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 hover:scale-105 transition">+ Saisie Candidat</button>
+                </div>
              </div>
+
+             {/* Formulaire de saisie manuelle (Toggle) */}
+             {showCandidateForm && (
+               <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 p-10 mb-12 animate-fadeIn">
+                  <h3 className="text-2xl font-display font-black text-slate-900 mb-8 italic">📝 Fiche Nouvelle Inscription</h3>
+                  <form onSubmit={handleCreateCandidate} className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Prénom</label>
+                        <input type="text" required value={newCandidate.prenom} onChange={e => setNewCandidate({...newCandidate, prenom: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nom</label>
+                        <input type="text" required value={newCandidate.nom} onChange={e => setNewCandidate({...newCandidate, nom: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Email</label>
+                        <input type="email" required value={newCandidate.email} onChange={e => setNewCandidate({...newCandidate, email: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium" />
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Région</label>
+                        <select value={newCandidate.region} onChange={e => setNewCandidate({...newCandidate, region: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
+                           <option>Île-de-France</option><option>Auvergne-Rhône-Alpes</option><option>Hauts-de-France</option><option>Provence-Alpes-Côte d'Azur</option><option>Occitanie</option>
+                        </select>
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Niveau Employabilité</label>
+                        <select value={newCandidate.niveau_employabilite} onChange={e => setNewCandidate({...newCandidate, niveau_employabilite: e.target.value})} className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium">
+                           <option value="1">Niveau 1 (Immédiat)</option>
+                           <option value="2">Niveau 2 (Accompagné)</option>
+                           <option value="3">Niveau 3 (En formation)</option>
+                        </select>
+                     </div>
+                     <div className="flex items-end">
+                        <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-numeric-blue text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:scale-105 transition-all text-[10px] uppercase tracking-widest">
+                           {isSubmitting ? 'Enregistrement...' : 'Valider l\'inscription'}
+                        </button>
+                     </div>
+                  </form>
+               </div>
+             )}
              <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
                 <table className="w-full text-left">
                    <thead className="bg-[#0f172a] text-[10px] font-black uppercase text-slate-500 tracking-widest">

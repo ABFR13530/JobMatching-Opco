@@ -49,6 +49,59 @@ module.exports = (db) => {
     },
 
     /**
+     * @route GET /api/events/:id/slots
+     * @desc Liste les créneaux disponibles pour un événement
+     */
+    async listSlots(req, res) {
+      const { id } = req.params;
+      try {
+        const query = `
+          SELECT s.*, c.name as company_name 
+          FROM event_slots s
+          JOIN companies c ON s.recruiter_id = c.id
+          WHERE s.event_id = $1 AND s.is_booked = false
+          ORDER BY s.start_time ASC
+        `;
+        const { rows } = await db.query(query, [id]);
+        res.status(200).json({ success: true, slots: rows });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+
+    /**
+     * @route POST /api/events/:id/slots
+     * @desc Générer des créneaux pour un recruteur (Batch creation)
+     */
+    async createSlots(req, res) {
+      const { id } = req.params;
+      const { recruiter_id, start_time, count, duration } = req.body;
+      
+      try {
+        let currentStart = new Date(start_time);
+        const slots = [];
+        
+        for (let i = 0; i < count; i++) {
+          let currentEnd = new Date(currentStart.getTime() + duration * 60000);
+          
+          const query = `
+            INSERT INTO event_slots (event_id, recruiter_id, start_time, end_time)
+            VALUES ($1, $2, $3, $4) RETURNING *
+          `;
+          const { rows } = await db.query(query, [id, recruiter_id, currentStart, currentEnd]);
+          slots.push(rows[0]);
+          
+          // Intervalle de 5 min entre les RDV
+          currentStart = new Date(currentEnd.getTime() + 5 * 60000);
+        }
+        
+        res.status(201).json({ success: true, slots });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+
+    /**
      * @route POST /api/events/book
      * @desc Réservation d'un créneau par un candidat + Génération Jitsi
      */
